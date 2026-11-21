@@ -68,11 +68,60 @@ def test_admin_server_management_never_returns_config_in_public_directory(client
     assert admin_detail.headers["cache-control"] == "no-store"
 
 
-def test_raw_profile_delivery_remains_closed_without_client_authorization(client):
+def test_raw_profile_delivery_requires_client_authorization(client):
     response = client.get("/api/v1/servers/server-id/config")
-    assert response.status_code == 503
+    assert response.status_code == 401
     assert response.headers["cache-control"] == "no-store"
+    assert response.headers["www-authenticate"] == "Bearer"
     assert "config" not in response.json()
+
+
+def test_device_must_be_approved_before_receiving_profile(client):
+    headers = admin_headers(client)
+    created = client.post(
+        "/api/v1/admin/servers",
+        headers=headers,
+        json=server_payload(),
+    )
+    assert created.status_code == 201
+    server_id = created.json()["id"]
+
+    device_id = "a" * 64
+    pending = client.post(
+        "/api/v1/client/register",
+        json={"device_id": device_id},
+    )
+    assert pending.status_code == 403
+    assert pending.headers["cache-control"] == "no-store"
+
+    devices = client.get("/api/v1/admin/devices", headers=headers)
+    assert devices.status_code == 200
+    assert any(
+        item["device_id"] == device_id and not item["enabled"]
+        for item in devices.json()["devices"]
+    )
+
+    approved = client.put(
+        f"/api/v1/admin/devices/{device_id}",
+        headers=headers,
+        json={"enabled": True},
+    )
+    assert approved.status_code == 200
+
+    registration = client.post(
+        "/api/v1/client/register",
+        json={"device_id": device_id},
+    )
+    assert registration.status_code == 200
+    token = registration.json()["access_token"]
+
+    profile = client.get(
+        f"/api/v1/servers/{server_id}/config",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert profile.status_code == 200
+    assert profile.json()["config"] == "vless://example-profile"
+    assert profile.headers["cache-control"] == "no-store"
 
 
 def test_admin_routes_require_authentication(client):
