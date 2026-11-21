@@ -31,6 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
   VpnServer? _preferredServer;
   String _language = 'fa';
   String _duration = '00:00:00';
+  int _uploadSpeed = 0;
+  int _downloadSpeed = 0;
+  int? _pingMs;
+  bool _pingAttempted = false;
   String? _message;
   bool _busy = false;
   bool _failoverRunning = false;
@@ -53,6 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onEngineStatus(V2RayStatus status) {
     if (!mounted) return;
     setState(() {
+      _uploadSpeed = status.uploadSpeed;
+      _downloadSpeed = status.downloadSpeed;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
           _connection = _ConnectionUi.connected;
@@ -69,6 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!_failoverRunning || _connection == _ConnectionUi.disconnecting) {
             _connection = _ConnectionUi.disconnected;
             _duration = '00:00:00';
+            _uploadSpeed = 0;
+            _downloadSpeed = 0;
+            _pingMs = null;
+            _pingAttempted = false;
             _activeServer = null;
           }
           break;
@@ -82,6 +92,27 @@ class _HomeScreenState extends State<HomeScreen> {
           break;
       }
     });
+    if (status.state.toUpperCase() == 'CONNECTED' && !_pingAttempted) {
+      _pingAttempted = true;
+      unawaited(_refreshConnectedPing());
+    }
+  }
+
+  Future<void> _refreshConnectedPing() async {
+    try {
+      final delay = await _vpn.getConnectedServerDelay();
+      if (mounted && _connected) setState(() => _pingMs = delay);
+    } catch (_) {
+      if (mounted && _connected) setState(() => _pingMs = null);
+    }
+  }
+
+  String _formatRate(int bytesPerSecond) {
+    if (bytesPerSecond < 1024) return '$bytesPerSecond B/s';
+    if (bytesPerSecond < 1024 * 1024) {
+      return '${(bytesPerSecond / 1024).toStringAsFixed(1)} KB/s';
+    }
+    return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(2)} MB/s';
   }
 
   @override
@@ -331,6 +362,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: const TextStyle(color: Colors.white60),
                                   ),
                                 ),
+                              if (_connected)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _ConnectionMetric(
+                                        label: _fa ? 'دریافت' : 'Download',
+                                        value: _formatRate(_downloadSpeed),
+                                        icon: Icons.download_rounded,
+                                      ),
+                                      _ConnectionMetric(
+                                        label: _fa ? 'ارسال' : 'Upload',
+                                        value: _formatRate(_uploadSpeed),
+                                        icon: Icons.upload_rounded,
+                                      ),
+                                      _ConnectionMetric(
+                                        label: 'Ping',
+                                        value: _pingMs == null ? '—' : '$_pingMs ms',
+                                        icon: Icons.speed_rounded,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               const SizedBox(height: 22),
                               SizedBox(
                                 width: 132,
@@ -432,5 +487,30 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      );
+}
+
+
+class _ConnectionMetric extends StatelessWidget {
+  const _ConnectionMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF3B82F6)),
+          const SizedBox(height: 5),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
+        ],
       );
 }
