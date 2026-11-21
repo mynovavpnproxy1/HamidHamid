@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
                       Icon(
                         Icons.shield_moon_outlined,
                         size: 118,
-                        color: Color(0xFF35D0BA),
+                        color: Color(0xFF3B82F6),
                       ),
                       SizedBox(height: 24),
                       Text(
@@ -85,12 +85,12 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       SizedBox(height: 9),
                       Text(
-                        'JEYRAN GROUP',
+                        'NOVA NETWORK',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 2.8,
-                          color: Color(0xFF35D0BA),
+                          color: Color(0xFF3B82F6),
                         ),
                       ),
                     ],
