@@ -12,7 +12,7 @@
 
 - Android uses `flutter_v2ray_client` 3.5.0 from the pinned Git commit `138faaddc216ef2b2960a0acd265151f065234e3`.
 - The plugin uses the Xray core and its native TUN inbound for Android VPN mode.
-- The backend is FastAPI with SQLite by default. No production database or public HTTPS deployment is configured yet.
+- The backend is FastAPI; local development uses SQLite and hosted deployments use managed PostgreSQL through DATABASE_URL. No production database or public HTTPS deployment is configured yet.
 - The server database is empty until the owner adds verified, working server profiles through the admin API.
 - A native `CONNECTED` event confirms that the core started; it does **not** prove that user traffic reaches the internet or that throughput is acceptable.
 - No owner-provided profile has yet passed an end-to-end Android traffic and throughput check. No production APK has been accepted as release-ready.
