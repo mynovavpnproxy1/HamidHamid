@@ -107,7 +107,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshConnectedPing() async {
     try {
       final delay = await _vpn.getConnectedServerDelay();
-      if (mounted && _connected) setState(() => _pingMs = delay);
+      if (mounted && _connected) {
+        setState(() => _pingMs = delay >= 0 ? delay : null);
+      }
     } catch (_) {
       if (mounted && _connected) setState(() => _pingMs = null);
     }
@@ -396,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         icon: Icons.upload_rounded,
                                       ),
                                       _ConnectionMetric(
-                                        label: 'Ping',
+                                        label: _fa ? 'تأخیر مسیر' : 'Latency',
                                         value: _pingMs == null ? '—' : '$_pingMs ms',
                                         icon: Icons.speed_rounded,
                                       ),
