@@ -190,11 +190,11 @@ def test_postgresql_database_adapter(monkeypatch):
     monkeypatch.setattr(main, "TOKEN_TTL_MINUTES", 30)
     main._login_attempts.clear()
 
-    with main.database() as conn:
-        conn.execute("DELETE FROM client_devices")
-        conn.execute("DELETE FROM servers")
-
     with TestClient(main.app) as postgres_client:
+        with main.database() as conn:
+            conn.execute("DELETE FROM client_devices")
+            conn.execute("DELETE FROM servers")
+
         assert postgres_client.get("/health").json() == {"status": "ok"}
         headers = admin_headers(postgres_client)
         created = postgres_client.post(
