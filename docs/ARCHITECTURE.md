@@ -4,17 +4,23 @@
 
 1. The owner uses the separate `/admin` site and authenticated admin API to add, change, disable, or remove server records.
 2. The Android app requests active display metadata from `GET /api/v1/servers`. Configurations are not part of this response.
-3. A future VPN-engine integration will request `GET /api/v1/servers/{id}/config` only on connection. The app must keep profiles out of logs and UI, and clear in-memory copies when no longer needed.
-4. The engine's actual Android VPN service status—not the API request succeeding—must be the source of connected/disconnected UI state.
+3. On connection, the app registers the device when needed, requests the selected server profile over HTTPS, and keeps the profile transient in memory.
+4. The Android app passes the profile to the pinned `flutter_v2ray_client` engine. The native Xray core receives the Android `VpnService` TUN file descriptor.
+5. The engine's native status stream—not a successful API request—is the source of the UI's connected/disconnected state.
 
-## Real-world status
+## Current implementation status
 
-This initial implementation has an empty database. It contains no sample server, no inferred location, no synthetic ping, no traffic statistics, and no operational VPN engine. Admin-set location is only shown after the owner marks it verified; this is not automatic geolocation validation.
+- Android uses `flutter_v2ray_client` 3.5.0 from the pinned Git commit `138faaddc216ef2b2960a0acd265151f065234e3`.
+- The plugin uses the Xray core and its native TUN inbound for Android VPN mode.
+- The backend is FastAPI with SQLite by default. No production database or public HTTPS deployment is configured yet.
+- The server database is empty until the owner adds verified, working server profiles through the admin API.
+- A native `CONNECTED` event confirms that the core started; it does **not** prove that user traffic reaches the internet or that throughput is acceptable.
+- No owner-provided profile has yet passed an end-to-end Android traffic and throughput check. No production APK has been accepted as release-ready.
 
 ## Production gates
 
-- Integrate and verify a maintained Android VPN engine and its license/protocol support.
-- Add Android VPN permission/service setup, lifecycle handling, connection timeout/error states, and device-level tests with owner-provided servers.
-- Design end-user authorization and abuse controls before exposing profile delivery publicly. A token embedded in an APK is extractable; profiles delivered to a device cannot be kept secret from its owner.
-- Deploy behind HTTPS, configure backups and database migrations, rotate credentials, protect admin access, and perform security review.
-- Add a privacy policy and only then consider advertising SDKs; no ad/analytics code is included.
+- Validate real traffic with owner-provided profiles on a physical Android device, including DNS, IPv4/IPv6 behavior, upload/download throughput, latency, and stability.
+- Compare representative server profiles and transports before deciding whether to retain Xray or migrate to another core. Do not infer performance from a logo, protocol label, or CONNECTED state.
+- Deploy the FastAPI control plane behind HTTPS with persistent database storage, backups, migrations, rotated secrets, and protected admin access.
+- Verify device approval and protected profile delivery under production hosting.
+- Complete security and privacy review, publish a privacy policy, and only then consider advertising SDKs.
