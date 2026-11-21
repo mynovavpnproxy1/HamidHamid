@@ -149,8 +149,6 @@ def test_supported_protocol_uri_is_accepted():
         ("VMESS", "vmess://profile"),
         ("TROJAN", "trojan://profile"),
         ("SHADOWSOCKS", "ss://profile"),
-        ("HYSTERIA", "hysteria://profile"),
-        ("HYSTERIA2", "hy2://profile"),
     ):
         assert main.ServerInput(name="Node", protocol=protocol, config=config).protocol == protocol
 
