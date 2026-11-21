@@ -10,9 +10,11 @@ dependencies:
   crypto: ^3.0.6
   flutter_secure_storage: ^9.2.4
   http: ^1.2.2
-  
   shared_preferences: ^2.3.2
-  flutter_v2ray_client: ^3.5.0
+  flutter_v2ray_client:
+    git:
+      url: https://github.com/mynovavpnproxy1/flutter_v2ray_client.git
+      ref: 138faaddc216ef2b2960a0acd265151f065234e3
 
 dev_dependencies:
   flutter_test:
@@ -21,4 +23,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  flutter_secure_storage: ^9.2.4
