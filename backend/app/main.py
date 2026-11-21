@@ -12,7 +12,7 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator, Mapping
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 APP_DIR = Path(__file__).resolve().parent
 DB_PATH = os.getenv("DATABASE_PATH", str(APP_DIR.parent / "nova.sqlite3"))
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 JWT_SECRET = os.getenv("JWT_SECRET", "")
@@ -57,15 +58,41 @@ def check_runtime_secrets() -> None:
         raise RuntimeError("TOKEN_TTL_MINUTES must be between 5 and 240")
 
 
+class DatabaseConnection:
+    """Small SQL compatibility layer for SQLite and managed PostgreSQL."""
+
+    def __init__(self, connection, *, postgres: bool):
+        self._connection = connection
+        self._postgres = postgres
+
+    def execute(self, statement: str, parameters=()):
+        if self._postgres:
+            statement = statement.replace("?", "%s")
+        return self._connection.execute(statement, parameters)
+
+
 @contextmanager
-def database() -> Iterator[sqlite3.Connection]:
-    path = Path(DB_PATH)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path, timeout=10)
-    conn.row_factory = sqlite3.Row
-    try:
+def database() -> Iterator[DatabaseConnection]:
+    if DATABASE_URL.startswith(("postgres://", "postgresql://")):
+        import psycopg
+        from psycopg.rows import dict_row
+
+        conn = psycopg.connect(
+            DATABASE_URL,
+            row_factory=dict_row,
+            connect_timeout=10,
+        )
+        wrapped = DatabaseConnection(conn, postgres=True)
+    else:
+        path = Path(DB_PATH)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(path, timeout=10)
+        conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
-        yield conn
+        wrapped = DatabaseConnection(conn, postgres=False)
+
+    try:
+        yield wrapped
         conn.commit()
     except Exception:
         conn.rollback()
@@ -203,7 +230,7 @@ def admin_claims(authorization: str | None = Header(default=None)) -> dict:
     return claims
 
 
-def public_server(row: sqlite3.Row) -> dict:
+def public_server(row: Mapping[str, Any]) -> dict:
     location_valid = bool(row["location_verified"])
     return {
         "id": row["id"],
@@ -216,7 +243,7 @@ def public_server(row: sqlite3.Row) -> dict:
     }
 
 
-def admin_server(row: sqlite3.Row) -> dict:
+def admin_server(row: Mapping[str, Any]) -> dict:
     result = public_server(row)
     result.update({"enabled": bool(row["enabled"]), "updated_at": row["updated_at"]})
     return result
@@ -261,7 +288,7 @@ def login(payload: LoginPayload, request: Request) -> dict:
 @app.get("/api/v1/servers")
 def list_servers() -> dict:
     with database() as conn:
-        rows = conn.execute("SELECT * FROM servers WHERE enabled = 1 ORDER BY name COLLATE NOCASE").fetchall()
+        rows = conn.execute("SELECT * FROM servers WHERE enabled = 1 ORDER BY name").fetchall()
     return {"servers": [public_server(row) for row in rows]}
 
 
