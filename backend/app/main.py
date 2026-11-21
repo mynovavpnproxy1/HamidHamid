@@ -37,14 +37,6 @@ PROFILE_SCHEMES = {
     "HYSTERIA": {"hysteria"},
     "HYSTERIA2": {"hysteria2", "hy2"},
 }
-PROFILE_SCHEMES = {
-    "VLESS": {"vless"},
-    "VMESS": {"vmess"},
-    "TROJAN": {"trojan"},
-    "SHADOWSOCKS": {"ss", "shadowsocks"},
-    "HYSTERIA": {"hysteria"},
-    "HYSTERIA2": {"hysteria2", "hy2"},
-}
 
 app = FastAPI(title="NOVA VPN API", version="0.3.0", docs_url=None, redoc_url=None)
 _login_attempts: dict[str, list[float]] = {}
