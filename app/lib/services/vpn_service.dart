@@ -96,6 +96,10 @@ class VpnService {
 
   V2RayStatus get currentStatus => _latestStatus;
 
+  /// Measures HTTPS response latency through the active VPN tunnel.
+  Future<int> getConnectedServerDelay() =>
+      _engine.getConnectedServerDelay();
+
   Future<void> initialize() async {
     if (_initialized) return;
 
