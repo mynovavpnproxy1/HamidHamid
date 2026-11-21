@@ -240,3 +240,12 @@ def test_postgresql_database_adapter(monkeypatch):
         )
         assert profile.status_code == 200
         assert profile.json()["config"] == "vless://example-profile"
+
+
+def test_protocols_outside_current_xray_engine_are_rejected():
+    with pytest.raises(ValidationError):
+        main.ServerInput(
+            name="Unsupported node",
+            protocol="HYSTERIA2",
+            config="hy2://profile",
+        )
