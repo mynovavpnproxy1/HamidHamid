@@ -43,6 +43,8 @@ def server_payload(**overrides):
 
 
 def test_database_starts_empty_and_public_api_has_no_fake_servers(client):
+    assert client.get("/health").json() == {"status": "ok"}
+    assert client.get("/ready").json() == {"status": "ready"}
     response = client.get("/api/v1/servers")
     assert response.status_code == 200
     assert response.json() == {"servers": []}
