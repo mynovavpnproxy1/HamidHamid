@@ -134,7 +134,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                               index++)
                             ListTile(
                               leading: const Icon(Icons.dns_outlined,
-                                  color: Color(0xFF35D0BA)),
+                                  color: Color(0xFF3B82F6)),
                               title: Text(_fa
                                   ? 'سرور ${index + 1}'
                                   : 'Server ${index + 1}'),
