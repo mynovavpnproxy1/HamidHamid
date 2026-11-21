@@ -28,10 +28,13 @@ Run backend tests from this directory with `pytest -q`.
 - `PUT /api/v1/admin/servers/{id}` — authenticated update / configuration rotation.
 - `DELETE /api/v1/admin/servers/{id}` — authenticated delete.
 - `GET /api/v1/servers` — active server metadata only.
-- `GET /api/v1/servers/{id}/config` — deliberately returns HTTP 503 until client authentication, entitlement, and abuse controls exist. A globally public raw-profile endpoint would expose every managed profile to anyone who can discover the API.
+- `POST /api/v1/client/register` — register a device ID. New devices are saved as pending and receive HTTP 403 until approved.
+- `GET /api/v1/admin/devices` — authenticated list of registered devices.
+- `PUT /api/v1/admin/devices/{device_id}` — authenticated approve or revoke a device.
+- `GET /api/v1/servers/{id}/config` — returns a profile only to a device holding a valid, short-lived client token and currently approved by the administrator. Missing/invalid tokens receive HTTP 401; unapproved devices receive HTTP 403. Responses are marked `no-store`.
 
 Country metadata is shown to app clients only when the owner explicitly marks it verified. This is an administrative assertion, not automated IP geolocation. No ping, health, traffic, or user-count metrics are implemented or displayed. Protocol/profile format checks are syntactic and do not establish that a server is reachable or operational.
 
 ## Production blockers
 
-The configuration-fetch route is intentionally unavailable until an end-user access-control design exists. It is not safe to treat an app-embedded key as a secret. Before public launch, add end-user authentication/entitlement, rate limiting at the reverse proxy, database backups and migrations, monitoring without secret logging, and independent security review. A profile delivered to a device can be extracted from that device. Configure HTTPS, secure backups, and credential rotation. SQLite is suitable only for a small single-instance deployment; use a managed database and migrations for scale.
+Device approval is now implemented as a minimal owner-controlled access gate; it is not a complete paid-subscription or identity system. Before public launch, add stronger abuse controls and rate limiting at the reverse proxy, database backups and migrations, monitoring without secret logging, and independent security review. Configure the app with the deployed HTTPS API URL using `--dart-define=API_BASE_URL=...`. Never embed administrator credentials or a shared API secret in the APK. A profile delivered to a device can be extracted from that device. Configure HTTPS, secure backups, and credential rotation. SQLite is suitable only for a small single-instance deployment; use a managed database and migrations for scale.
