@@ -11,7 +11,7 @@ class NovaVpnApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF35D0BA), brightness: Brightness.dark, surface: const Color(0xFF101A2B)),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3B82F6), brightness: Brightness.dark, surface: const Color(0xFF101A2B)),
           scaffoldBackgroundColor: const Color(0xFF091321),
           appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF091321), elevation: 0),
         ),
