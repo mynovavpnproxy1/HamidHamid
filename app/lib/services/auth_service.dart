@@ -44,7 +44,12 @@ class AuthService {
         .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw AuthException('Device registration failed.');
+      throw AuthException(
+        response.statusCode == 403
+            ? 'This device is awaiting administrator approval.'
+            : 'Device registration failed.',
+        statusCode: response.statusCode,
+      );
     }
 
     final decoded = jsonDecode(response.body);
@@ -66,9 +71,10 @@ class AuthService {
 }
 
 class AuthException implements Exception {
-  const AuthException(this.message);
+  const AuthException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;
