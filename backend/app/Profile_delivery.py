@@ -151,13 +151,14 @@ def install_profile_delivery(
         with database() as conn:
             conn.execute(
                 """
-                INSERT OR IGNORE INTO client_devices (
+                INSERT INTO client_devices (
                     device_id,
                     first_seen_at,
                     last_seen_at,
                     enabled
                 )
                 VALUES (?, ?, ?, 0)
+                ON CONFLICT (device_id) DO NOTHING
                 """,
                 (
                     payload.device_id,
