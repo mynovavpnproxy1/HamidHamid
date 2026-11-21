@@ -28,15 +28,13 @@ JWT_SECRET = os.getenv("JWT_SECRET", "")
 TOKEN_TTL_MINUTES = int(os.getenv("TOKEN_TTL_MINUTES", "30"))
 ALGORITHM = "HS256"
 TOKEN_ISSUER = "nova-vpn-api"
-SUPPORTED_PROTOCOLS = {"VLESS", "VMESS", "TROJAN", "SHADOWSOCKS", "HYSTERIA", "HYSTERIA2"}
+SUPPORTED_PROTOCOLS = {"VLESS", "VMESS", "TROJAN", "SHADOWSOCKS"}
 COUNTRY_CODE = re.compile(r"^[A-Z]{2}$")
 PROFILE_SCHEMES = {
     "VLESS": {"vless"},
     "VMESS": {"vmess"},
     "TROJAN": {"trojan"},
     "SHADOWSOCKS": {"ss", "shadowsocks"},
-    "HYSTERIA": {"hysteria"},
-    "HYSTERIA2": {"hysteria2", "hy2"},
 }
 
 app = FastAPI(title="NOVA VPN API", version="0.3.0", docs_url=None, redoc_url=None)
