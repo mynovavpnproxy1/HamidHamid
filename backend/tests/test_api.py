@@ -216,3 +216,29 @@ def test_postgresql_database_adapter(monkeypatch):
         )
         assert detail.status_code == 200
         assert detail.json()["config"] == "vless://example-profile"
+
+        device_id = "b" * 64
+        pending = postgres_client.post(
+            "/api/v1/client/register",
+            json={"device_id": device_id},
+        )
+        assert pending.status_code == 403
+
+        approved = postgres_client.put(
+            f"/api/v1/admin/devices/{device_id}",
+            headers=headers,
+            json={"enabled": True},
+        )
+        assert approved.status_code == 200
+
+        registration = postgres_client.post(
+            "/api/v1/client/register",
+            json={"device_id": device_id},
+        )
+        assert registration.status_code == 200
+        profile = postgres_client.get(
+            f"/api/v1/servers/{server_id}/config",
+            headers={"Authorization": f"Bearer {registration.json()['access_token']}"},
+        )
+        assert profile.status_code == 200
+        assert profile.json()["config"] == "vless://example-profile"
