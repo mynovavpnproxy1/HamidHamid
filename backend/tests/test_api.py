@@ -173,3 +173,46 @@ def test_disabled_server_is_not_public(client):
     created = client.post("/api/v1/admin/servers", headers=headers, json=server_payload(enabled=False))
     assert created.status_code == 201
     assert client.get("/api/v1/servers").json() == {"servers": []}
+
+
+
+def test_postgresql_database_adapter(monkeypatch):
+    import os
+
+    database_url = os.getenv("TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("PostgreSQL integration service is not configured")
+
+    monkeypatch.setattr(main, "DATABASE_URL", database_url)
+    monkeypatch.setattr(main, "ADMIN_USERNAME", "owner")
+    monkeypatch.setattr(main, "ADMIN_PASSWORD", "correct-horse-battery-staple")
+    monkeypatch.setattr(main, "JWT_SECRET", "a-test-secret-that-is-long-enough-for-hmac-signing")
+    monkeypatch.setattr(main, "TOKEN_TTL_MINUTES", 30)
+    main._login_attempts.clear()
+
+    with main.database() as conn:
+        conn.execute("DELETE FROM client_devices")
+        conn.execute("DELETE FROM servers")
+
+    with TestClient(main.app) as postgres_client:
+        assert postgres_client.get("/health").json() == {"status": "ok"}
+        headers = admin_headers(postgres_client)
+        created = postgres_client.post(
+            "/api/v1/admin/servers",
+            headers=headers,
+            json=server_payload(),
+        )
+        assert created.status_code == 201
+        server_id = created.json()["id"]
+
+        public = postgres_client.get("/api/v1/servers")
+        assert public.status_code == 200
+        assert len(public.json()["servers"]) == 1
+        assert "config" not in public.json()["servers"][0]
+
+        detail = postgres_client.get(
+            f"/api/v1/admin/servers/{server_id}",
+            headers=headers,
+        )
+        assert detail.status_code == 200
+        assert detail.json()["config"] == "vless://example-profile"
