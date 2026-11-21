@@ -262,6 +262,20 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@app.get("/ready")
+def readiness() -> dict:
+    # Readiness includes a live database round-trip for hosted deployments.
+    try:
+        with database() as conn:
+            conn.execute("SELECT 1").fetchone()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        ) from exc
+    return {"status": "ready"}
+
+
 @app.post("/api/v1/admin/login")
 def login(payload: LoginPayload, request: Request) -> dict:
     # Do not trust X-Forwarded-For here. Configure trusted-proxy rate limiting at the edge.
