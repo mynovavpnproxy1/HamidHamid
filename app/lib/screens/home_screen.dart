@@ -215,13 +215,17 @@ class _HomeScreenState extends State<HomeScreen> {
           _message = _fa ? 'مجوز VPN داده نشد.' : 'VPN permission was denied.';
         });
       }
-    } on ApiException {
+    } on ApiException catch (error) {
       if (mounted) {
         setState(() {
           _connection = _ConnectionUi.error;
-          _message = _fa
-              ? 'دریافت امن پروفایل از سمت سرویس در دسترس نیست.'
-              : 'Secure profile delivery is unavailable from the service.';
+          _message = error.statusCode == 403
+              ? (_fa
+                  ? 'این دستگاه ثبت شده و منتظر تأیید مدیر است. پس از تأیید دوباره اتصال را بزنید.'
+                  : 'This device is registered and awaiting administrator approval. Try connecting again after approval.')
+              : (_fa
+                  ? 'دریافت امن پروفایل از سمت سرویس در دسترس نیست.'
+                  : 'Secure profile delivery is unavailable from the service.');
         });
       }
     } on AllCandidatesFailedException catch (error) {
