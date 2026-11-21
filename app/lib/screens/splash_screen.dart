@@ -23,14 +23,16 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1000),
     );
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scale = Tween<double>(begin: .82, end: 1).animate(
+    _scale = Tween<double>(begin: .86, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
-    _timer = Timer(const Duration(milliseconds: 1700), () {
+
+    // Keep the branded launch screen visible for 3.5 seconds.
+    _timer = Timer(const Duration(milliseconds: 3500), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -50,11 +52,12 @@ class _SplashScreenState extends State<SplashScreen>
         body: Container(
           width: double.infinity,
           decoration: const BoxDecoration(
+            color: Color(0xFF091321),
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF10263B),
+                Color(0xFF101A2B),
                 Color(0xFF091321),
                 Color(0xFF07101C),
               ],
@@ -67,30 +70,45 @@ class _SplashScreenState extends State<SplashScreen>
                 child: ScaleTransition(
                   scale: _scale,
                   child: const Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.shield_moon_outlined,
-                        size: 118,
+                        size: 164,
                         color: Color(0xFF3B82F6),
                       ),
-                      SizedBox(height: 24),
+                      SizedBox(height: 30),
                       Text(
                         'NOVA VPN',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 34,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 3.5,
+                          letterSpacing: 4,
+                          color: Color(0xFFF2F5FA),
                         ),
                       ),
-                      SizedBox(height: 9),
+                      SizedBox(height: 14),
                       Text(
-                        'NOVA NETWORK',
+                        'JEYRAN GROUP',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 2.8,
-                          color: Color(0xFF3B82F6),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3,
+                          color: Color(0xFF9DBCF7),
+                        ),
+                      ),
+                      SizedBox(height: 18),
+                      Text(
+                        'اینترنت آزاد با novavpn',
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFD4DCE8),
                         ),
                       ),
                     ],
