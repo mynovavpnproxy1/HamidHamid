@@ -296,11 +296,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(
                         Icons.shield_moon_outlined,
                         size: 82,
-                        color: Color(0xFF35D0BA),
+                        color: Color(0xFF3B82F6),
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'JEYRAN GROUP',
+                        'NOVA NETWORK',
                         style: TextStyle(color: Colors.white54, letterSpacing: 2),
                       ),
                       const SizedBox(height: 24),
@@ -319,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: _connected
-                                      ? const Color(0xFF35D0BA)
+                                      ? const Color(0xFF3B82F6)
                                       : Colors.white70,
                                 ),
                               ),
@@ -340,10 +340,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: OutlinedButton.styleFrom(
                                     shape: const CircleBorder(),
                                     side: const BorderSide(
-                                      color: Color(0xFF35D0BA),
+                                      color: Color(0xFF3B82F6),
                                       width: 2,
                                     ),
-                                    backgroundColor: const Color(0xFF35D0BA)
+                                    backgroundColor: const Color(0xFF3B82F6)
                                         .withValues(alpha: .07),
                                   ),
                                   child: _busy
@@ -359,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ? Icons.stop_rounded
                                               : Icons.power_settings_new,
                                           size: 48,
-                                          color: const Color(0xFF35D0BA),
+                                          color: const Color(0xFF3B82F6),
                                         ),
                                 ),
                               ),
