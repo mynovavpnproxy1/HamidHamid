@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/vpn_server.dart';
 import '../storage/secure_storage_service.dart';
+import 'auth_service.dart';
+import 'device_service.dart';
 
 class ApiService {
   ApiService({
@@ -12,11 +14,18 @@ class ApiService {
     String? baseUrl,
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const SecureStorageService(),
-        _baseUrl = baseUrl ?? const String.fromEnvironment('API_BASE_URL');
+        _baseUrl = baseUrl ?? const String.fromEnvironment('API_BASE_URL'),
+        _auth = AuthService(
+          client: _client,
+          deviceService: DeviceService(storage: _storage),
+          storage: _storage,
+          baseUrl: _baseUrl,
+        );
 
   final http.Client _client;
   final SecureStorageService _storage;
   final String _baseUrl;
+  final AuthService _auth;
 
   Uri _uri(String path) {
     if (_baseUrl.isEmpty) {
@@ -62,15 +71,19 @@ class ApiService {
   }
 
   Future<String> fetchServerConfig(String serverId) async {
-    final token = await _storage.readAccessToken();
+    var token = await _storage.readAccessToken();
     if (token == null || token.trim().isEmpty) {
-      throw const ApiException('Device authentication is required.');
+      try {
+        token = await _auth.registerDevice();
+      } on AuthException catch (error) {
+        throw ApiException(error.message, statusCode: error.statusCode);
+      }
     }
 
     final path =
         '/api/v1/servers/${Uri.encodeComponent(serverId)}/config';
 
-    final response = await _client
+    var response = await _client
         .get(
           _uri(path),
           headers: {
@@ -82,7 +95,20 @@ class ApiService {
 
     if (response.statusCode == 401) {
       await _storage.clearAccessToken();
-      throw const ApiException('Device authentication expired.');
+      try {
+        token = await _auth.registerDevice();
+      } on AuthException catch (error) {
+        throw ApiException(error.message, statusCode: error.statusCode);
+      }
+      response = await _client
+          .get(
+            _uri(path),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Cache-Control': 'no-store',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
     }
 
     if (response.statusCode != 200) {
@@ -105,9 +131,10 @@ class ApiService {
 }
 
 class ApiException implements Exception {
-  const ApiException(this.message);
+  const ApiException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;
