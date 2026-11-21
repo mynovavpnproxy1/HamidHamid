@@ -14,18 +14,19 @@ class ApiService {
     String? baseUrl,
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const SecureStorageService(),
-        _baseUrl = baseUrl ?? const String.fromEnvironment('API_BASE_URL'),
-        _auth = AuthService(
-          client: _client,
-          deviceService: DeviceService(storage: _storage),
-          storage: _storage,
-          baseUrl: _baseUrl,
-        );
+        _baseUrl = baseUrl ?? const String.fromEnvironment('API_BASE_URL') {
+    _auth = AuthService(
+      client: _client,
+      deviceService: DeviceService(storage: _storage),
+      storage: _storage,
+      baseUrl: _baseUrl,
+    );
+  }
 
   final http.Client _client;
   final SecureStorageService _storage;
   final String _baseUrl;
-  final AuthService _auth;
+  late final AuthService _auth;
 
   Uri _uri(String path) {
     if (_baseUrl.isEmpty) {
