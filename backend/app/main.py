@@ -1,5 +1,6 @@
-from .profile_delivery import install_profile_delivery
 from __future__ import annotations
+
+from .Profile_delivery import install_profile_delivery
 
 import hmac
 import json
@@ -28,6 +29,14 @@ ALGORITHM = "HS256"
 TOKEN_ISSUER = "nova-vpn-api"
 SUPPORTED_PROTOCOLS = {"VLESS", "VMESS", "TROJAN", "SHADOWSOCKS", "HYSTERIA", "HYSTERIA2"}
 COUNTRY_CODE = re.compile(r"^[A-Z]{2}$")
+PROFILE_SCHEMES = {
+    "VLESS": {"vless"},
+    "VMESS": {"vmess"},
+    "TROJAN": {"trojan"},
+    "SHADOWSOCKS": {"ss", "shadowsocks"},
+    "HYSTERIA": {"hysteria"},
+    "HYSTERIA2": {"hysteria2", "hy2"},
+}
 PROFILE_SCHEMES = {
     "VLESS": {"vless"},
     "VMESS": {"vmess"},
