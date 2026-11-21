@@ -89,23 +89,15 @@ jobs:
         run: flutter analyze --no-fatal-infos
       - name: Run Flutter tests
         run: flutter test
-      - name: Verify deployed API URL
+      - name: Build Android debug APK
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
-        shell: bash
+          API_BASE_URL: ${{ vars.API_BASE_URL || 'https://nova-vpn-clinet-db.onrender.com' }}
         run: |
-          if [[ -z "$API_BASE_URL" ]]; then
-            echo "::error::Set the repository variable API_BASE_URL to the deployed HTTPS backend URL."
-            exit 1
-          fi
           if [[ "$API_BASE_URL" != https://* ]]; then
             echo "::error::API_BASE_URL must use HTTPS."
             exit 1
           fi
-      - name: Build Android debug APK
-        env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
-        run: flutter build apk --debug --dart-define=API_BASE_URL="$API_BASE_URL"
+          flutter build apk --debug --dart-define=API_BASE_URL="$API_BASE_URL"
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
