@@ -20,13 +20,13 @@ This repository contains a Render Blueprint at the repository root (`render.yaml
 
 After the Render deployment finishes, copy the service's HTTPS URL, for example `https://nova-vpn-api.onrender.com`. The actual hostname is assigned by Render and must be copied from the dashboard; do not assume the example hostname is yours.
 
-Open `<your-service-url>/health`. The expected response is:
+Open `<your-service-url>/health` to confirm the web process is alive. Then open `<your-service-url>/ready`; this endpoint also checks that the PostgreSQL database can be reached and returns HTTP 200 with:
 
 ```json
-{"status":"ok"}
+{"status":"ready"}
 ```
 
-Then open `<your-service-url>/admin` and sign in using the administrator credentials you set in Render. Do not put any real VPN profile into the admin panel until the deployment and database have been verified.
+Render uses `/ready` as its health-check path, so a database outage is not reported as a healthy deployment. Then open `<your-service-url>/admin` and sign in using the administrator credentials you set in Render. Do not put any real VPN profile into the admin panel until the deployment and database have been verified.
 
 ## Connect the Android build to the deployed API
 
