@@ -112,9 +112,17 @@ class ApiService {
           .timeout(const Duration(seconds: 15));
     }
 
+    if (response.statusCode == 403) {
+      throw const ApiException(
+        'This device is awaiting administrator approval.',
+        statusCode: 403,
+      );
+    }
+
     if (response.statusCode != 200) {
       throw ApiException(
         'Server profile unavailable (${response.statusCode}).',
+        statusCode: response.statusCode,
       );
     }
 
