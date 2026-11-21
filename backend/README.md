@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI API plus a separate authenticated owner dashboard at `/admin`. The database begins empty: no sample or presumed-working VPN servers are inserted.
+FastAPI API plus a separate authenticated owner dashboard at `/admin`. The database begins empty: no sample or presumed-working VPN servers are inserted. The currently pinned Android engine is Xray-based and accepts VLESS, VMess, Trojan, and Shadowsocks profiles; Hysteria, TUIC, and WireGuard profiles must not be added until a separately licensed Sing-box engine is integrated.
 
 ## Local run
 
