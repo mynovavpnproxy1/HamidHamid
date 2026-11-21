@@ -33,6 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _duration = '00:00:00';
   int _uploadSpeed = 0;
   int _downloadSpeed = 0;
+  int _uploadedBytes = 0;
+  int _downloadedBytes = 0;
   int? _pingMs;
   bool _pingAttempted = false;
   String? _message;
@@ -59,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _uploadSpeed = status.uploadSpeed;
       _downloadSpeed = status.downloadSpeed;
+      _uploadedBytes = status.upload;
+      _downloadedBytes = status.download;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
           _connection = _ConnectionUi.connected;
@@ -77,6 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _duration = '00:00:00';
             _uploadSpeed = 0;
             _downloadSpeed = 0;
+            _uploadedBytes = 0;
+            _downloadedBytes = 0;
             _pingMs = null;
             _pingAttempted = false;
             _activeServer = null;
@@ -113,6 +119,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return '${(bytesPerSecond / 1024).toStringAsFixed(1)} KB/s';
     }
     return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(2)} MB/s';
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
   @override
@@ -382,6 +399,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                         label: 'Ping',
                                         value: _pingMs == null ? '—' : '$_pingMs ms',
                                         icon: Icons.speed_rounded,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (_connected)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _ConnectionMetric(
+                                        label: _fa ? 'دریافت کل' : 'Downloaded',
+                                        value: _formatBytes(_downloadedBytes),
+                                        icon: Icons.south_rounded,
+                                      ),
+                                      _ConnectionMetric(
+                                        label: _fa ? 'ارسال کل' : 'Uploaded',
+                                        value: _formatBytes(_uploadedBytes),
+                                        icon: Icons.north_rounded,
                                       ),
                                     ],
                                   ),
