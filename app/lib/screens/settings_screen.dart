@@ -41,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             title: Text(_language == 'fa' ? 'دربارهٔ NOVA VPN' : 'About NOVA VPN'),
-            subtitle: const Text('JEYRAN GROUP · 0.1.0'),
+            subtitle: const Text('NOVA VPN · 0.1.0'),
           ),
           ListTile(
             title: Text(_language == 'fa' ? 'حریم خصوصی' : 'Privacy'),
