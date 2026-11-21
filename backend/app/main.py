@@ -73,7 +73,9 @@ class DatabaseConnection:
 
 @contextmanager
 def database() -> Iterator[DatabaseConnection]:
-    if DATABASE_URL.startswith(("postgres://", "postgresql://")):
+    if DATABASE_URL:
+        if not DATABASE_URL.startswith(("postgres://", "postgresql://")):
+            raise RuntimeError("DATABASE_URL must be a PostgreSQL connection string")
         import psycopg
         from psycopg.rows import dict_row
 
