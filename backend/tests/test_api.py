@@ -70,6 +70,30 @@ def test_admin_server_management_never_returns_config_in_public_directory(client
     assert admin_detail.headers["cache-control"] == "no-store"
 
 
+def test_country_and_city_location_metadata_reaches_app_without_raw_config(client):
+    headers = admin_headers(client)
+    created = client.post(
+        "/api/v1/admin/servers",
+        headers=headers,
+        json=server_payload(
+            country_code="DE",
+            country_name_fa="آلمان",
+            country_name_en="Germany",
+            location_name_fa="فرانکفورت",
+            location_name_en="Frankfurt",
+            location_verified=True,
+        ),
+    )
+    assert created.status_code == 201
+    public = client.get("/api/v1/servers")
+    assert public.status_code == 200
+    server = public.json()["servers"][0]
+    assert server["country_code"] == "DE"
+    assert server["location_name_fa"] == "فرانکفورت"
+    assert server["location_name_en"] == "Frankfurt"
+    assert "config" not in server
+
+
 def test_raw_profile_delivery_requires_client_authorization(client):
     response = client.get("/api/v1/servers/server-id/config")
     assert response.status_code == 401
