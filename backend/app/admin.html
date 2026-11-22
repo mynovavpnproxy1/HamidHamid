@@ -48,7 +48,9 @@
       <div><label>نام نمایشی</label><input id="name" required maxlength="80" placeholder="مثلاً Server 1"></div>
       <div><label>پروتکل</label><select id="protocol"><option>VLESS</option><option>VMESS</option><option>TROJAN</option><option>SHADOWSOCKS</option><option>HYSTERIA2</option><option>HYSTERIA</option></select></div>
       <div><label>کد کشور ISO (فقط با مکان تأییدشده)</label><input id="countryCode" maxlength="2" placeholder="DE"></div>
-      <div><label>نام کشور فارسی</label><input id="countryFa" maxlength="80"></div><div><label>نام کشور انگلیسی</label><input id="countryEn" maxlength="80"></div></div>
+      <div><label>نام کشور فارسی</label><input id="countryFa" maxlength="80"></div><div><label>نام کشور انگلیسی</label><input id="countryEn" maxlength="80"></div>
+      <div><label>نام شهر / موقعیت فارسی</label><input id="locationFa" maxlength="80" placeholder="مثلاً فرانکفورت"></div>
+      <div><label>نام شهر / موقعیت انگلیسی</label><input id="locationEn" maxlength="80" placeholder="مثلاً Frankfurt"></div></div>
       <label><input id="locationVerified" type="checkbox" style="width:auto"> موقعیت کشور را مستقل و معتبر بررسی کرده‌ام</label>
       <label><input id="enabled" type="checkbox" style="width:auto"> فعال برای کاربران</label>
       <label>پروفایل / کانفیگ خام (فقط مدیر؛ در فهرست عمومی برگردانده نمی‌شود)</label><textarea id="config" required autocomplete="off" spellcheck="false"></textarea>
@@ -68,10 +70,56 @@ $('loginButton').onclick=async()=>{ $('loginError').textContent='';try{const res
 function clearForm(){ $('serverForm').reset();$('serverId').value='';$('formTitle').textContent='افزودن یا ویرایش کانفیگ';$('formMessage').textContent=''}
 $('clearForm').onclick=clearForm;$('logout').onclick=logout;$('refresh').onclick=loadServers;$('refreshDevices').onclick=loadDevices;$('refreshCountries').onclick=loadCountries;
 async function loadServers(){try{const result=await api('/api/v1/admin/servers');const root=$('servers');root.replaceChildren();if(!result.servers.length){root.textContent='هنوز هیچ سروری ثبت نشده است.';return}for(const server of result.servers){const box=document.createElement('article');box.className='server';const title=document.createElement('strong');title.textContent=`${server.name} · ${server.protocol}`;const details=document.createElement('div');details.className='meta';details.textContent=`${server.enabled?'فعال':'غیرفعال'} · ${server.location_verified?(server.country_name_fa||server.country_code):'موقعیت نامشخص'} · به‌روزرسانی: ${server.updated_at}`;const actions=document.createElement('div');actions.className='actions';const edit=document.createElement('button');edit.className='secondary';edit.textContent='ویرایش';edit.onclick=()=>editServer(server.id);const remove=document.createElement('button');remove.className='danger';remove.textContent='حذف';remove.onclick=()=>deleteServer(server.id);actions.append(edit,remove);box.append(title,details,actions);root.append(box)}}catch(e){$('servers').textContent=e.message}}
-async function loadCountries(){try{const result=await api('/api/v1/admin/servers');const groups=new Map();for(const server of result.servers){if(!server.location_verified||!server.country_code)continue;const code=server.country_code.toUpperCase();if(!groups.has(code))groups.set(code,[]);groups.get(code).push(server)}const root=$('countries');root.replaceChildren();if(!groups.size){root.textContent='هنوز کشوری با موقعیت تأییدشده ثبت نشده است.';return}for(const [code,items] of [...groups.entries()].sort((a,b)=>(a[1][0].country_name_fa||a[0]).localeCompare(b[1][0].country_name_fa||b[0]))){const box=document.createElement('article');box.className='server';const title=document.createElement('strong');const flag=String.fromCodePoint(...[...code].map(c=>0x1F1E6+c.charCodeAt(0)-65));title.textContent=flag+' '+(items[0].country_name_fa||items[0].country_name_en||code)+' · '+items.length+' کانفیگ';const details=document.createElement('div');details.className='meta';details.textContent=(items[0].country_name_en||code)+' · '+items.filter(item=>item.enabled).length+' فعال';const add=document.createElement('button');add.className='secondary';add.textContent='افزودن کانفیگ به این کشور';add.onclick=()=>{clearForm();$('countryCode').value=code;$('countryFa').value=items[0].country_name_fa||'';$('countryEn').value=items[0].country_name_en||'';$('locationVerified').checked=true;$('enabled').checked=true;$('name').value='Server '+(items.length+1);$('formTitle').textContent='افزودن کانفیگ برای '+(items[0].country_name_fa||code);$('formSection').open=true;$('config').focus();$('formSection').scrollIntoView({behavior:'smooth',block:'start'})};box.append(title,details,add);root.append(box)}}catch(e){$('countries').textContent=e.message}}
+async function loadCountries(){try{
+  const result=await api('/api/v1/admin/servers');
+  const countries=new Map();
+  for(const server of result.servers){
+    if(!server.location_verified||!server.country_code)continue;
+    const code=server.country_code.toUpperCase();
+    if(!countries.has(code))countries.set(code,{servers:[],locations:new Map()});
+    const country=countries.get(code);country.servers.push(server);
+    const locationKey=(server.location_name_en||server.location_name_fa||'__other__').trim().toLowerCase();
+    if(!country.locations.has(locationKey))country.locations.set(locationKey,[]);
+    country.locations.get(locationKey).push(server);
+  }
+  const root=$('countries');root.replaceChildren();
+  if(!countries.size){root.textContent='هنوز کشوری با موقعیت تأییدشده ثبت نشده است. برای ایجاد کشور، اولین کانفیگ آن را اضافه کنید.';return}
+  for(const [code,country] of [...countries.entries()].sort((a,b)=>(a[1].servers[0].country_name_fa||a[0]).localeCompare(b[1].servers[0].country_name_fa||b[0]))){
+    const section=document.createElement('details');section.className='server';
+    const summary=document.createElement('summary');summary.style.cursor='pointer';
+    const flag=String.fromCodePoint(...[...code].map(c=>0x1F1E6+c.charCodeAt(0)-65));
+    summary.textContent=flag+' '+(country.servers[0].country_name_fa||country.servers[0].country_name_en||code)+' · '+country.servers.length+' کانفیگ';
+    section.append(summary);
+    for(const [locationKey,items] of [...country.locations.entries()].sort((a,b)=>(a[1][0].location_name_fa||a[1][0].location_name_en||'').localeCompare(b[1][0].location_name_fa||b[1][0].location_name_en||''))){
+      const location=document.createElement('div');location.className='server';location.style.marginInlineStart='18px';
+      const title=document.createElement('strong');title.textContent='📍 '+(items[0].location_name_fa||items[0].location_name_en||'سایر موقعیت‌ها')+' · '+items.length+' کانفیگ';
+      const meta=document.createElement('div');meta.className='meta';meta.textContent=(items[0].location_name_en||'')+' · '+items.filter(x=>x.enabled).length+' فعال';
+      location.append(title,meta);
+      for(const server of items){
+        const line=document.createElement('div');line.className='meta';line.style.marginTop='8px';
+        const name=document.createElement('span');name.textContent=server.name+' · '+server.protocol+' · '+(server.enabled?'فعال':'غیرفعال');
+        const edit=document.createElement('button');edit.className='secondary';edit.textContent='ویرایش کانفیگ';edit.style.width='auto';edit.style.marginInlineStart='8px';edit.onclick=()=>editServer(server.id);
+        line.append(name,edit);location.append(line);
+      }
+      const add=document.createElement('button');add.className='secondary';add.textContent='افزودن کانفیگ به این موقعیت';add.onclick=()=>{
+        clearForm();$('countryCode').value=code;$('countryFa').value=items[0].country_name_fa||'';$('countryEn').value=items[0].country_name_en||'';
+        $('locationFa').value=items[0].location_name_fa||'';$('locationEn').value=items[0].location_name_en||'';
+        $('locationVerified').checked=true;$('enabled').checked=true;$('name').value='Server '+(items.length+1);
+        $('formTitle').textContent='افزودن کانفیگ برای '+(items[0].location_name_fa||items[0].location_name_en||code);
+        $('formSection').open=true;$('config').focus();$('formSection').scrollIntoView({behavior:'smooth',block:'start'});
+      };location.append(add);section.append(location);
+    }
+    const addLocation=document.createElement('button');addLocation.className='secondary';addLocation.textContent='افزودن موقعیت جدید به این کشور';addLocation.onclick=()=>{
+      clearForm();$('countryCode').value=code;$('countryFa').value=country.servers[0].country_name_fa||'';$('countryEn').value=country.servers[0].country_name_en||'';
+      $('locationVerified').checked=true;$('enabled').checked=true;$('name').value='Server 1';
+      $('formTitle').textContent='افزودن موقعیت جدید برای '+(country.servers[0].country_name_fa||code);
+      $('formSection').open=true;$('locationFa').focus();$('formSection').scrollIntoView({behavior:'smooth',block:'start'});
+    };section.append(addLocation);root.append(section);
+  }
+}catch(e){$('countries').textContent=e.message}}
 async function loadDevices(){try{const result=await api('/api/v1/admin/devices');const root=$('devices');root.replaceChildren();if(!result.devices.length){root.textContent='هنوز دستگاهی ثبت نشده است.';return}for(const device of result.devices){const box=document.createElement('article');box.className='server';const title=document.createElement('strong');title.textContent=device.enabled?'دستگاه تأییدشده':'دستگاه در انتظار تأیید';const details=document.createElement('div');details.className='meta';details.textContent='شناسه: '+device.device_id+' · ثبت: '+device.first_seen_at;const actions=document.createElement('div');actions.className='actions';const toggle=document.createElement('button');toggle.className=device.enabled?'danger':'secondary';toggle.textContent=device.enabled?'لغو دسترسی':'تأیید دستگاه';toggle.onclick=async()=>{try{await api('/api/v1/admin/devices/'+encodeURIComponent(device.device_id),{method:'PUT',body:JSON.stringify({enabled:!device.enabled})});await loadDevices()}catch(e){alert(e.message)}};actions.append(toggle);box.append(title,details,actions);root.append(box)}}catch(e){$('devices').textContent=e.message}}
-async function editServer(id){try{const s=await api(`/api/v1/admin/servers/${encodeURIComponent(id)}`);$('serverId').value=s.id;$('name').value=s.name;$('protocol').value=s.protocol;$('countryCode').value=s.country_code||'';$('countryFa').value=s.country_name_fa||'';$('countryEn').value=s.country_name_en||'';$('locationVerified').checked=s.location_verified;$('enabled').checked=s.enabled;$('config').value=s.config;$('formTitle').textContent='ویرایش کانفیگ / سرور';$('formSection').open=true;$('formSection').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){$('formMessage').textContent=e.message}}
+async function editServer(id){try{const s=await api(`/api/v1/admin/servers/${encodeURIComponent(id)}`);$('serverId').value=s.id;$('name').value=s.name;$('protocol').value=s.protocol;$('countryCode').value=s.country_code||'';$('countryFa').value=s.country_name_fa||'';$('countryEn').value=s.country_name_en||'';$('locationFa').value=s.location_name_fa||'';$('locationEn').value=s.location_name_en||'';$('locationVerified').checked=s.location_verified;$('enabled').checked=s.enabled;$('config').value=s.config;$('formTitle').textContent='ویرایش کانفیگ / سرور';$('formSection').open=true;$('formSection').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){$('formMessage').textContent=e.message}}
 async function deleteServer(id){if(!confirm('این سرور حذف شود؟'))return;try{await api(`/api/v1/admin/servers/${encodeURIComponent(id)}`,{method:'DELETE'});await loadServers();await loadCountries()}catch(e){alert(e.message)}}
-$('serverForm').onsubmit=async event=>{event.preventDefault();$('formMessage').textContent='در حال ذخیره…';const payload={name:$('name').value,protocol:$('protocol').value,country_code:$('countryCode').value||null,country_name_fa:$('countryFa').value||null,country_name_en:$('countryEn').value||null,location_verified:$('locationVerified').checked,enabled:$('enabled').checked,config:$('config').value};const id=$('serverId').value;try{await api(id?`/api/v1/admin/servers/${encodeURIComponent(id)}`:'/api/v1/admin/servers',{method:id?'PUT':'POST',body:JSON.stringify(payload)});$('formMessage').textContent='ذخیره شد.';clearForm();await loadServers();await loadCountries()}catch(e){$('formMessage').textContent=e.message}};
+$('serverForm').onsubmit=async event=>{event.preventDefault();$('formMessage').textContent='در حال ذخیره…';const payload={name:$('name').value,protocol:$('protocol').value,country_code:$('countryCode').value||null,country_name_fa:$('countryFa').value||null,country_name_en:$('countryEn').value||null,location_name_fa:$('locationFa').value||null,location_name_en:$('locationEn').value||null,location_verified:$('locationVerified').checked,enabled:$('enabled').checked,config:$('config').value};const id=$('serverId').value;try{await api(id?`/api/v1/admin/servers/${encodeURIComponent(id)}`:'/api/v1/admin/servers',{method:id?'PUT':'POST',body:JSON.stringify(payload)});$('formMessage').textContent='ذخیره شد.';clearForm();await loadServers();await loadCountries()}catch(e){$('formMessage').textContent=e.message}};
 if(token){showDashboard(true);loadServers();loadCountries();loadDevices()}else showDashboard(false);
 </script></body></html>
