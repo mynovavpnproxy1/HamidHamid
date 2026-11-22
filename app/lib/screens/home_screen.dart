@@ -233,16 +233,28 @@ class _HomeScreenState extends State<HomeScreen> {
       final selectedServer = _preferredServer ??
           (savedServer.isEmpty ? null : savedServer.first);
       final selectedCountryCode = selectedServer?.countryCode;
-      final selectedLocationName = selectedServer?.locationNameEn ??
-          selectedServer?.locationNameFa;
+      bool sameSelectedCity(VpnServer server) {
+        if (selectedServer == null) return true;
+        final selectedEn = (selectedServer.locationNameEn ?? '').trim().toLowerCase();
+        final candidateEn = (server.locationNameEn ?? '').trim().toLowerCase();
+        if (selectedEn.isNotEmpty && candidateEn.isNotEmpty) {
+          return selectedEn == candidateEn;
+        }
+        final selectedFa = (selectedServer.locationNameFa ?? '').trim().toLowerCase();
+        final candidateFa = (server.locationNameFa ?? '').trim().toLowerCase();
+        if (selectedFa.isNotEmpty && candidateFa.isNotEmpty) {
+          return selectedFa == candidateFa;
+        }
+        return (selectedEn.isNotEmpty && selectedEn == candidateEn) ||
+            (selectedFa.isNotEmpty && selectedFa == candidateFa);
+      }
+
       final countryServers = selectedCountryCode == null
           ? servers
           : servers.where((server) =>
               server.locationVerified &&
               server.countryCode == selectedCountryCode &&
-              (selectedLocationName == null ||
-                  (server.locationNameEn ?? server.locationNameFa) ==
-                      selectedLocationName)).toList();
+              sameSelectedCity(server)).toList();
       if (countryServers.isEmpty) {
         setState(() {
           _connection = _ConnectionUi.error;
