@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/vpn_server.dart';
 import '../services/api_service.dart';
 
-/// Lets users choose only from server metadata returned by the backend.
-/// Raw VPN profiles are never fetched or displayed on this screen.
+/// Country-only picker. Users never see or edit raw VPN profiles.
 class ServerListScreen extends StatefulWidget {
   const ServerListScreen({super.key, required this.language});
-
   final String language;
 
   @override
@@ -17,7 +15,6 @@ class ServerListScreen extends StatefulWidget {
 class _ServerListScreenState extends State<ServerListScreen> {
   final ApiService _api = ApiService();
   late Future<List<VpnServer>> _servers;
-
   bool get _fa => widget.language == 'fa';
 
   @override
@@ -32,27 +29,24 @@ class _ServerListScreenState extends State<ServerListScreen> {
     super.dispose();
   }
 
-  String _countryName(VpnServer server) {
-    if (!server.locationVerified) return _fa ? 'موقعیت نامشخص' : 'Unknown location';
-    return (_fa ? server.countryNameFa : server.countryNameEn) ??
-        (_fa ? 'موقعیت نامشخص' : 'Unknown location');
-  }
+  String _countryName(VpnServer server) =>
+      (_fa ? server.countryNameFa : server.countryNameEn) ??
+      server.countryNameEn ??
+      server.countryCode ??
+      (_fa ? 'موقعیت نامشخص' : 'Unknown location');
 
-  String _flag(VpnServer server) {
-    final code = server.locationVerified ? server.countryCode : null;
-    if (code == null || code.length != 2) return '🌐';
-    return String.fromCharCodes(code.toUpperCase().codeUnits.map(
-      (unit) => 0x1F1E6 + unit - 0x41,
-    ));
-  }
+  String _flag(String code) => String.fromCharCodes(
+        code.toUpperCase().codeUnits.map((unit) => 0x1F1E6 + unit - 0x41),
+      );
 
   Map<String, List<VpnServer>> _group(List<VpnServer> servers) {
     final groups = <String, List<VpnServer>>{};
     for (final server in servers) {
-      final key = server.locationVerified && server.countryCode != null
-          ? server.countryCode!
-          : 'UNKNOWN';
-      (groups[key] ??= []).add(server);
+      final code = server.countryCode;
+      if (!server.locationVerified || code == null || code.length != 2) {
+        continue;
+      }
+      (groups[code] ??= []).add(server);
     }
     return groups;
   }
@@ -61,9 +55,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-          appBar: AppBar(
-            title: Text(_fa ? 'انتخاب کشور و سرور' : 'Choose country and server'),
-          ),
+          appBar: AppBar(title: const Text('Select Location')),
           body: FutureBuilder<List<VpnServer>>(
             future: _servers,
             builder: (context, snapshot) {
@@ -73,77 +65,59 @@ class _ServerListScreenState extends State<ServerListScreen> {
               if (snapshot.hasError) {
                 return _EmptyState(
                   message: _fa
-                      ? 'دریافت فهرست سرورها ممکن نیست. اتصال اینترنت و نشانی API را بررسی کنید.'
-                      : 'Could not load servers. Check the network and API address.',
+                      ? 'دریافت موقعیت‌ها ممکن نیست. اتصال اینترنت را بررسی کنید.'
+                      : 'Could not load locations. Check your internet connection.',
                   actionLabel: _fa ? 'تلاش دوباره' : 'Retry',
                   onAction: () => setState(() => _servers = _api.fetchServers()),
                 );
               }
 
-              final servers = snapshot.data ?? const <VpnServer>[];
-              if (servers.isEmpty) {
-                return Center(
-                  child: Text(
-                    _fa
-                        ? 'در حال حاضر سرور فعالی وجود ندارد.'
-                        : 'No active servers are available.',
-                    textAlign: TextAlign.center,
-                  ),
-                );
-              }
-
-              final groups = _group(servers);
+              final groups = _group(snapshot.data ?? const <VpnServer>[]);
               final countries = groups.keys.toList()
-                ..sort((a, b) {
-                  if (a == 'UNKNOWN') return 1;
-                  if (b == 'UNKNOWN') return -1;
-                  final nameA = _countryName(groups[a]!.first);
-                  final nameB = _countryName(groups[b]!.first);
-                  return nameA.compareTo(nameB);
-                });
+                ..sort((a, b) => _countryName(groups[a]!.first)
+                    .compareTo(_countryName(groups[b]!.first)));
 
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Text(
-                    _fa
-                        ? 'فقط سرورهای فعال پنل مدیریت نمایش داده می‌شوند.'
-                        : 'Only servers enabled in the owner panel are shown.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.white60),
+                  Card(
+                    color: const Color(0xFF101A2B),
+                    child: ListTile(
+                      leading: const Icon(Icons.public,
+                          color: Color(0xFF3B82F6), size: 28),
+                      title: Text(_fa ? 'اتصال خودکار' : 'Automatic'),
+                      subtitle: Text(_fa
+                          ? 'انتخاب سرور از تمام کشورها'
+                          : 'Choose an available server from any country'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).pop(null),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  for (final country in countries)
+                  const SizedBox(height: 8),
+                  if (countries.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        _fa
+                            ? 'هنوز کشور فعالی در پنل مدیریت ثبت نشده است.'
+                            : 'No active country locations are available yet.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  for (final code in countries)
                     Card(
-                      margin: const EdgeInsets.only(bottom: 10),
                       color: const Color(0xFF101A2B),
-                      child: ExpansionTile(
-                        leading: Text(
-                          _flag(groups[country]!.first),
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        title: Text(_countryName(groups[country]!.first)),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        leading: Text(_flag(code),
+                            style: const TextStyle(fontSize: 27)),
+                        title: Text(_countryName(groups[code]!.first)),
                         subtitle: Text(_fa
-                            ? '${groups[country]!.length} سرور'
-                            : '${groups[country]!.length} servers'),
-                        children: [
-                          for (var index = 0;
-                              index < groups[country]!.length;
-                              index++)
-                            ListTile(
-                              leading: const Icon(Icons.dns_outlined,
-                                  color: Color(0xFF3B82F6)),
-                              title: Text(_fa
-                                  ? 'سرور ${index + 1}'
-                                  : 'Server ${index + 1}'),
-                              subtitle: Text(groups[country]![index].protocol),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => Navigator.of(context)
-                                  .pop(groups[country]![index]),
-                            ),
-                        ],
+                            ? '${groups[code]!.length} سرور آماده اتصال'
+                            : '${groups[code]!.length} available servers'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context)
+                            .pop<VpnServer>(groups[code]!.first),
                       ),
                     ),
                 ],
