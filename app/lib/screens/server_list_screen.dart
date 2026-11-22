@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/vpn_server.dart';
 import '../services/api_service.dart';
 
-/// Country-only picker. Users never see or edit raw VPN profiles.
+/// Country -> city/location picker. Raw VPN profiles are never exposed.
 class ServerListScreen extends StatefulWidget {
   const ServerListScreen({super.key, required this.language});
   final String language;
@@ -15,6 +15,7 @@ class ServerListScreen extends StatefulWidget {
 class _ServerListScreenState extends State<ServerListScreen> {
   final ApiService _api = ApiService();
   late Future<List<VpnServer>> _servers;
+  final Set<String> _expandedCountries = <String>{};
   bool get _fa => widget.language == 'fa';
 
   @override
@@ -34,6 +35,11 @@ class _ServerListScreenState extends State<ServerListScreen> {
       server.countryNameEn ??
       server.countryCode ??
       (_fa ? 'موقعیت نامشخص' : 'Unknown location');
+
+  String _locationName(VpnServer server) =>
+      (_fa ? server.locationNameFa : server.locationNameEn) ??
+      server.locationNameEn ??
+      (_fa ? 'سایر موقعیت‌ها' : 'Other locations');
 
   String _flag(String code) => String.fromCharCodes(
         code.toUpperCase().codeUnits.map((unit) => 0x1F1E6 + unit - 0x41),
@@ -55,7 +61,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-          appBar: AppBar(title: const Text('Select Location')),
+          appBar: AppBar(title: Text(_fa ? 'انتخاب کشور و موقعیت' : 'Select Location')),
           body: FutureBuilder<List<VpnServer>>(
             future: _servers,
             builder: (context, snapshot) {
@@ -83,12 +89,11 @@ class _ServerListScreenState extends State<ServerListScreen> {
                   Card(
                     color: const Color(0xFF101A2B),
                     child: ListTile(
-                      leading: const Icon(Icons.public,
-                          color: Color(0xFF3B82F6), size: 28),
+                      leading: const Icon(Icons.public, color: Color(0xFF3B82F6), size: 28),
                       title: Text(_fa ? 'اتصال خودکار' : 'Automatic'),
                       subtitle: Text(_fa
-                          ? 'انتخاب سرور از تمام کشورها'
-                          : 'Choose an available server from any country'),
+                          ? 'انتخاب سرور از تمام کشورها و شهرها'
+                          : 'Choose an available server from any country or city'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).pop(null),
                     ),
@@ -98,9 +103,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        _fa
-                            ? 'هنوز کشور فعالی در پنل مدیریت ثبت نشده است.'
-                            : 'No active country locations are available yet.',
+                        _fa ? 'هنوز موقعیت فعالی ثبت نشده است.' : 'No active locations are available yet.',
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -108,16 +111,40 @@ class _ServerListScreenState extends State<ServerListScreen> {
                     Card(
                       color: const Color(0xFF101A2B),
                       margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        leading: Text(_flag(code),
-                            style: const TextStyle(fontSize: 27)),
-                        title: Text(_countryName(groups[code]!.first)),
-                        subtitle: Text(_fa
-                            ? '${groups[code]!.length} سرور آماده اتصال'
-                            : '${groups[code]!.length} available servers'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.of(context)
-                            .pop<VpnServer>(groups[code]!.first),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: Text(_flag(code), style: const TextStyle(fontSize: 27)),
+                            title: Text(_countryName(groups[code]!.first)),
+                            subtitle: Text(_fa
+                                ? '${groups[code]!.length} کانفیگ فعال'
+                                : '${groups[code]!.length} active configurations'),
+                            trailing: Icon(_expandedCountries.contains(code)
+                                ? Icons.expand_less : Icons.expand_more),
+                            onTap: () => setState(() {
+                              if (!_expandedCountries.add(code)) _expandedCountries.remove(code);
+                            }),
+                          ),
+                          if (_expandedCountries.contains(code))
+                            ..._locations(groups[code]!).entries.map((entry) {
+                              final first = entry.value.first;
+                              return Padding(
+                                padding: const EdgeInsetsDirectional.only(start: 18, end: 10, bottom: 8),
+                                child: Card(
+                                  color: const Color(0xFF17263A),
+                                  child: ListTile(
+                                    leading: const Icon(Icons.location_on_outlined, color: Color(0xFF60A5FA)),
+                                    title: Text(_locationName(first)),
+                                    subtitle: Text(_fa
+                                        ? '${entry.value.length} سرور در این موقعیت'
+                                        : '${entry.value.length} servers in this location'),
+                                    trailing: const Icon(Icons.chevron_right),
+                                    onTap: () => Navigator.of(context).pop<VpnServer>(first),
+                                  ),
+                                ),
+                              );
+                            }),
+                        ],
                       ),
                     ),
                 ],
@@ -126,15 +153,20 @@ class _ServerListScreenState extends State<ServerListScreen> {
           ),
         ),
       );
+
+  Map<String, List<VpnServer>> _locations(List<VpnServer> servers) {
+    final result = <String, List<VpnServer>>{};
+    for (final server in servers) {
+      final key = '${server.locationNameEn ?? server.locationNameFa ?? 'other'}';
+      (result[key] ??= []).add(server);
+    }
+    return Map.fromEntries(result.entries.toList()
+      ..sort((a, b) => _locationName(a.value.first).compareTo(_locationName(b.value.first))));
+  }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.message,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
+  const _EmptyState({required this.message, required this.actionLabel, required this.onAction});
   final String message;
   final String actionLabel;
   final VoidCallback onAction;
