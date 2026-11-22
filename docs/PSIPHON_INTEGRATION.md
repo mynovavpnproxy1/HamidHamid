@@ -41,6 +41,18 @@ The official sample includes only a `psiphon_config_stub`, not a usable client c
 
 Pin the Maven artifact to the exact observed release `ca.psiphon:psiphontunnel:2.0.43`; do not use the sample's floating `2.+` version.
 
+## Official configuration request route
+
+No reusable Nova VPN production configuration was found in the public Psiphon repositories. The official core requires non-empty `PropagationChannelId` and `SponsorId`; the documented Android sample says the integration-specific values are supplied by Psiphon Inc. A third-party Flutter wrapper independently documents the integrator request address as `sponsor@psiphon.ca` and says each integrator receives a separate configuration.
+
+Before implementing a production connection, request from Psiphon:
+- A dedicated `PropagationChannelId` and `SponsorId` for Nova VPN.
+- The complete Android Psiphon client JSON configuration, including signed remote server-list URLs and verification key (or the current officially supported equivalent).
+- Written confirmation of permitted distribution, branding/sponsorship requirements, and commercial/open-source licensing terms for bundling the GPL-licensed tunnel library in Nova VPN.
+- Any attribution, privacy, telemetry, or user-notice requirements.
+
+Do not use IDs extracted from Psiphon or another third-party app. They identify a different distribution/sponsor and are not a legitimate substitute for Nova's own integration credentials.
+
 ## Candidate integration architecture
 
 Preferred candidate: keep Xray as the only Android VPN/TUN owner and start Psiphon in non-VPN/local-SOCKS mode. Add a dedicated Psiphon Android bridge and a Dart engine adapter. When Psiphon reports both a listening SOCKS port and its connected callback, construct an Xray configuration that sends user traffic through a loopback SOCKS outbound. The existing direct-to-server Xray path remains unchanged and available as the default engine.
@@ -69,4 +81,4 @@ The inspected Psiphon tunnel-core source declares GNU GPL version 3 or later. Th
 
 ## Current completion status
 
-No Psiphon code has been added yet. The immediate implementation blocker is the missing Psiphon-issued client configuration (PropagationChannelId, SponsorId, signed server-list endpoints, and public key). No APK build, device connection, traffic-routing, leak, or stability test is claimed. This document records the verified interfaces and the engineering gates for the next implementation step.
+No Psiphon code has been added yet. The immediate implementation blocker is the missing Psiphon-issued Nova VPN client configuration and written distribution/licensing terms. The documented contact route is sponsor@psiphon.ca. No APK build, device connection, traffic-routing, leak, or stability test is claimed. This document records the verified interfaces and the engineering gates for the next implementation step.
