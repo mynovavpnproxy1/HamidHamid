@@ -6,6 +6,8 @@ class VpnServer {
     required this.countryCode,
     required this.countryNameFa,
     required this.countryNameEn,
+    required this.locationNameFa,
+    required this.locationNameEn,
     required this.locationVerified,
   });
 
@@ -15,6 +17,8 @@ class VpnServer {
   final String? countryCode;
   final String? countryNameFa;
   final String? countryNameEn;
+  final String? locationNameFa;
+  final String? locationNameEn;
   final bool locationVerified;
 
   factory VpnServer.fromJson(Map<String, dynamic> json) => VpnServer(
@@ -24,6 +28,8 @@ class VpnServer {
         countryCode: json['country_code'] as String?,
         countryNameFa: json['country_name_fa'] as String?,
         countryNameEn: json['country_name_en'] as String?,
+        locationNameFa: json['location_name_fa'] as String?,
+        locationNameEn: json['location_name_en'] as String?,
         locationVerified: json['location_verified'] == true,
       );
 }
