@@ -99,3 +99,6 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
+        # This repository does not have GitHub Code Scanning enabled.
+        # Keep local CodeQL analysis, but do not upload SARIF to the disabled API.
+        upload: false
