@@ -111,12 +111,25 @@ def initialize_database() -> None:
                 country_code TEXT,
                 country_name_fa TEXT,
                 country_name_en TEXT,
+                location_name_fa TEXT,
+                location_name_en TEXT,
                 location_verified INTEGER NOT NULL DEFAULT 0,
                 enabled INTEGER NOT NULL DEFAULT 0,
                 config TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
+        # Safe additive migration for databases created by earlier app versions.
+        if conn._postgres:
+            existing = {row["column_name"] for row in conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = current_schema() AND table_name = 'servers'"
+            ).fetchall()}
+        else:
+            existing = {row["name"] for row in conn.execute("PRAGMA table_info(servers)").fetchall()}
+        for column in ("location_name_fa", "location_name_en"):
+            if column not in existing:
+                conn.execute(f"ALTER TABLE servers ADD COLUMN {column} TEXT")
 
 
 @app.on_event("startup")
@@ -148,6 +161,8 @@ class ServerInput(BaseModel):
     country_code: str | None = None
     country_name_fa: str | None = Field(default=None, max_length=80)
     country_name_en: str | None = Field(default=None, max_length=80)
+    location_name_fa: str | None = Field(default=None, max_length=80)
+    location_name_en: str | None = Field(default=None, max_length=80)
     location_verified: bool = False
     enabled: bool = False
     config: str = Field(min_length=1, max_length=200_000)
@@ -239,6 +254,8 @@ def public_server(row: Mapping[str, Any]) -> dict:
         "country_code": row["country_code"] if location_valid else None,
         "country_name_fa": row["country_name_fa"] if location_valid else None,
         "country_name_en": row["country_name_en"] if location_valid else None,
+        "location_name_fa": row["location_name_fa"] if location_valid else None,
+        "location_name_en": row["location_name_en"] if location_valid else None,
         "location_verified": location_valid,
     }
 
@@ -320,11 +337,12 @@ def create_server(payload: ServerInput, _: dict = Depends(admin_claims)) -> dict
     with database() as conn:
         conn.execute("""INSERT INTO servers
             (id, name, protocol, country_code, country_name_fa, country_name_en,
-             location_verified, enabled, config, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             location_name_fa, location_name_en, location_verified, enabled, config, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (server_id, payload.name, payload.protocol, payload.country_code,
-             payload.country_name_fa, payload.country_name_en, int(payload.location_verified),
-             int(payload.enabled), payload.config, utc_now()))
+             payload.country_name_fa, payload.country_name_en, payload.location_name_fa,
+             payload.location_name_en, int(payload.location_verified), int(payload.enabled),
+             payload.config, utc_now()))
         row = conn.execute("SELECT * FROM servers WHERE id = ?", (server_id,)).fetchone()
     return admin_server(row)
 
@@ -344,11 +362,11 @@ def admin_get_server(server_id: str, _: dict = Depends(admin_claims)) -> dict:
 def update_server(server_id: str, payload: ServerInput, _: dict = Depends(admin_claims)) -> dict:
     with database() as conn:
         cursor = conn.execute("""UPDATE servers SET name = ?, protocol = ?, country_code = ?,
-            country_name_fa = ?, country_name_en = ?, location_verified = ?, enabled = ?,
-            config = ?, updated_at = ? WHERE id = ?""",
+            country_name_fa = ?, country_name_en = ?, location_name_fa = ?, location_name_en = ?,
+            location_verified = ?, enabled = ?, config = ?, updated_at = ? WHERE id = ?""",
             (payload.name, payload.protocol, payload.country_code, payload.country_name_fa,
-             payload.country_name_en, int(payload.location_verified), int(payload.enabled),
-             payload.config, utc_now(), server_id))
+             payload.country_name_en, payload.location_name_fa, payload.location_name_en,
+             int(payload.location_verified), int(payload.enabled), payload.config, utc_now(), server_id))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Server not found")
         row = conn.execute("SELECT * FROM servers WHERE id = ?", (server_id,)).fetchone()
