@@ -157,7 +157,10 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Map<String, List<VpnServer>> _locations(List<VpnServer> servers) {
     final result = <String, List<VpnServer>>{};
     for (final server in servers) {
-      final key = '${server.locationNameEn ?? server.locationNameFa ?? 'other'}';
+      // Keep city grouping stable when a record has only one language.
+      final english = (server.locationNameEn ?? '').trim().toLowerCase();
+      final persian = (server.locationNameFa ?? '').trim().toLowerCase();
+      final key = english.isNotEmpty ? 'en:$english' : (persian.isNotEmpty ? 'fa:$persian' : 'other');
       (result[key] ??= []).add(server);
     }
     return Map.fromEntries(result.entries.toList()
