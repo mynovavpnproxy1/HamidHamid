@@ -35,6 +35,12 @@ The official `PsiphonTunnel` source exposes:
 
 The library initializes with VPN mode false by default. Its listener reports the dynamically selected local SOCKS port. The official TunneledWebView sample uses that local proxy port to proxy application traffic. This establishes that Psiphon can expose a local proxy; it does not yet prove that the Nova Xray TUN path can safely consume it.
 
+## Required Psiphon service configuration
+
+The official sample includes only a `psiphon_config_stub`, not a usable client configuration. It explicitly says that `PropagationChannelId`, `SponsorId`, remote server-list URLs, and the server-list signature public key are supplied by Psiphon Inc. The public Android app source generates its `EmbeddedValues` from build-time values rather than publishing those production values in the repository. Do not copy credentials/configuration from an unrelated third-party build, and do not replace required values with guessed placeholders. A functional Psiphon connection therefore requires a configuration authorized/provided for Nova VPN by Psiphon Inc. Until that is available, the new engine must remain unavailable/disabled rather than showing a false connected state.
+
+Pin the Maven artifact to the exact observed release `ca.psiphon:psiphontunnel:2.0.43`; do not use the sample's floating `2.+` version.
+
 ## Candidate integration architecture
 
 Preferred candidate: keep Xray as the only Android VPN/TUN owner and start Psiphon in non-VPN/local-SOCKS mode. Add a dedicated Psiphon Android bridge and a Dart engine adapter. When Psiphon reports both a listening SOCKS port and its connected callback, construct an Xray configuration that sends user traffic through a loopback SOCKS outbound. The existing direct-to-server Xray path remains unchanged and available as the default engine.
@@ -63,4 +69,4 @@ The inspected Psiphon tunnel-core source declares GNU GPL version 3 or later. Th
 
 ## Current completion status
 
-No Psiphon code has been added yet. No APK build, device connection, traffic-routing, leak, or stability test is claimed. This document records the verified interfaces and the engineering gates for the next implementation step.
+No Psiphon code has been added yet. The immediate implementation blocker is the missing Psiphon-issued client configuration (PropagationChannelId, SponsorId, signed server-list endpoints, and public key). No APK build, device connection, traffic-routing, leak, or stability test is claimed. This document records the verified interfaces and the engineering gates for the next implementation step.
