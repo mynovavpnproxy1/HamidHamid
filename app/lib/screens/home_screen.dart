@@ -389,11 +389,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(
                         Icons.shield_moon_outlined,
                         size: 82,
-                        color: Color(0xFF3B82F6),
+                        color: Color(0xFF35D0BA),
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'NOVA NETWORK',
+                        'JEYRAN GROUP',
                         style: TextStyle(color: Colors.white54, letterSpacing: 2),
                       ),
                       const SizedBox(height: 24),
@@ -412,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: _connected
-                                      ? const Color(0xFF3B82F6)
+                                      ? const Color(0xFF35D0BA)
                                       : Colors.white70,
                                 ),
                               ),
@@ -476,10 +476,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: OutlinedButton.styleFrom(
                                     shape: const CircleBorder(),
                                     side: const BorderSide(
-                                      color: Color(0xFF3B82F6),
+                                      color: Color(0xFF35D0BA),
                                       width: 2,
                                     ),
-                                    backgroundColor: const Color(0xFF3B82F6)
+                                    backgroundColor: const Color(0xFF35D0BA)
                                         .withValues(alpha: .07),
                                   ),
                                   child: _busy
@@ -495,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ? Icons.stop_rounded
                                               : Icons.power_settings_new,
                                           size: 48,
-                                          color: const Color(0xFF3B82F6),
+                                          color: const Color(0xFF35D0BA),
                                         ),
                                 ),
                               ),
@@ -543,15 +543,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: const Icon(Icons.public),
                         label: Text(
                           _preferredServer == null
-                              ? 'Select Location'
-                              : [
-                                  _preferredServer!.countryNameFa ??
-                                      _preferredServer!.countryNameEn ??
-                                      _preferredServer!.countryCode ??
-                                      'Automatic',
-                                  _preferredServer!.locationNameFa ??
-                                      _preferredServer!.locationNameEn,
-                                ].whereType<String>().join(' · '),
+                              ? (_fa
+                                  ? 'انتخاب کشور و سرور'
+                                  : 'Choose country and server')
+                              : '${_fa ? 'انتخاب‌شده' : 'Selected'}: ${_preferredServer!.name}',
                         ),
                       ),
                       if (_message != null)
@@ -592,7 +587,7 @@ class _ConnectionMetric extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF3B82F6)),
+          Icon(icon, size: 18, color: const Color(0xFF35D0BA)),
           const SizedBox(height: 5),
           Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 3),
