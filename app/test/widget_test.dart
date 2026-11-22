@@ -6,6 +6,7 @@ void main() {
     await tester.pumpWidget(const NovaVpnApp());
 
     expect(find.text('NOVA VPN'), findsOneWidget);
-    expect(find.text('NOVA NETWORK'), findsOneWidget);
+    expect(find.text('JEYRAN GROUP'), findsOneWidget);
+    expect(find.text('اینترنت آزاد با novavpn'), findsOneWidget);
   });
 }
