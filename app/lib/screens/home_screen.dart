@@ -230,13 +230,19 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       final preferredId = _preferredServer?.id ?? savedId;
       final savedServer = servers.where((server) => server.id == preferredId);
-      final selectedCountryCode = _preferredServer?.countryCode ??
-          (savedServer.isEmpty ? null : savedServer.first.countryCode);
+      final selectedServer = _preferredServer ??
+          (savedServer.isEmpty ? null : savedServer.first);
+      final selectedCountryCode = selectedServer?.countryCode;
+      final selectedLocationName = selectedServer?.locationNameEn ??
+          selectedServer?.locationNameFa;
       final countryServers = selectedCountryCode == null
           ? servers
           : servers.where((server) =>
               server.locationVerified &&
-              server.countryCode == selectedCountryCode).toList();
+              server.countryCode == selectedCountryCode &&
+              (selectedLocationName == null ||
+                  (server.locationNameEn ?? server.locationNameFa) ==
+                      selectedLocationName)).toList();
       if (countryServers.isEmpty) {
         setState(() {
           _connection = _ConnectionUi.error;
@@ -526,10 +532,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: Text(
                           _preferredServer == null
                               ? 'Select Location'
-                              : (_preferredServer!.countryNameFa ??
-                                  _preferredServer!.countryNameEn ??
-                                  _preferredServer!.countryCode ??
-                                  'Automatic'),
+                              : [
+                                  _preferredServer!.countryNameFa ??
+                                      _preferredServer!.countryNameEn ??
+                                      _preferredServer!.countryCode ??
+                                      'Automatic',
+                                  _preferredServer!.locationNameFa ??
+                                      _preferredServer!.locationNameEn,
+                                ].whereType<String>().join(' · '),
                         ),
                       ),
                       if (_message != null)
