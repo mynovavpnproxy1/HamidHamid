@@ -148,7 +148,15 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => ServerListScreen(language: _language),
       ),
     );
-    if (selected == null || !mounted) return;
+    if (!mounted) return;
+    if (selected == null) {
+      await _storage.writeServerId('');
+      setState(() {
+        _preferredServer = null;
+        _message = null;
+      });
+      return;
+    }
     await _storage.writeServerId(selected.id);
     if (mounted) {
       setState(() {
@@ -221,9 +229,26 @@ class _HomeScreenState extends State<HomeScreen> {
       final savedId = await _storage.readServerId();
       if (!mounted) return;
       final preferredId = _preferredServer?.id ?? savedId;
+      final savedServer = servers.where((server) => server.id == preferredId);
+      final selectedCountryCode = _preferredServer?.countryCode ??
+          (savedServer.isEmpty ? null : savedServer.first.countryCode);
+      final countryServers = selectedCountryCode == null
+          ? servers
+          : servers.where((server) =>
+              server.locationVerified &&
+              server.countryCode == selectedCountryCode).toList();
+      if (countryServers.isEmpty) {
+        setState(() {
+          _connection = _ConnectionUi.error;
+          _message = _fa
+              ? 'برای این کشور در حال حاضر سرور فعالی وجود ندارد.'
+              : 'No active servers are available for this location.';
+        });
+        return;
+      }
       final candidates = <VpnServer>[
-        ...servers.where((server) => server.id == preferredId),
-        ...servers.where((server) => server.id != preferredId),
+        ...countryServers.where((server) => server.id == preferredId),
+        ...countryServers.where((server) => server.id != preferredId),
       ];
       _attemptCount = candidates.length;
 
@@ -500,10 +525,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: const Icon(Icons.public),
                         label: Text(
                           _preferredServer == null
-                              ? (_fa
-                                  ? 'انتخاب کشور و سرور'
-                                  : 'Choose country and server')
-                              : '${_fa ? 'انتخاب‌شده' : 'Selected'}: ${_preferredServer!.name}',
+                              ? 'Select Location'
+                              : (_preferredServer!.countryNameFa ??
+                                  _preferredServer!.countryNameEn ??
+                                  _preferredServer!.countryCode ??
+                                  'Automatic'),
                         ),
                       ),
                       if (_message != null)
