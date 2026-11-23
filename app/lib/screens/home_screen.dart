@@ -406,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   border: Border.all(color: const Color(0xFF243B68)),
                                 ),
                                 child: Image.asset(
-                                  'assets/brand/nova_logo_dark.png',
+                                  'assets/brand/nova_logo_dark.jpg',
                                   fit: BoxFit.contain,
                                   errorBuilder: (_, __, ___) => const Icon(
                                     Icons.shield_outlined,
