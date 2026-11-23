@@ -73,10 +73,11 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.shield_moon_outlined,
-                        size: 164,
-                        color: Color(0xFF3B82F6),
+                      Image.asset(
+                        'assets/brand/nova_logo_dark.png',
+                        width: 206,
+                        height: 206,
+                        fit: BoxFit.contain,
                       ),
                       SizedBox(height: 30),
                       Text(
@@ -90,25 +91,25 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                       SizedBox(height: 14),
-                      Text(
-                        'JEYRAN GROUP',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 3,
-                          color: Color(0xFF9DBCF7),
-                        ),
-                      ),
                       SizedBox(height: 18),
                       Text(
-                        'اینترنت آزاد با novavpn',
+                        'اتصال هوشمند، سریع و امن',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFFD4DCE8),
+                        ),
+                      ),
+                      SizedBox(height: 34),
+                      SizedBox(
+                        width: 92,
+                        child: LinearProgressIndicator(
+                          minHeight: 3,
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          backgroundColor: Color(0xFF1D2B49),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF35A8FF)),
                         ),
                       ),
                     ],
