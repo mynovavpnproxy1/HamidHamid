@@ -408,6 +408,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Image.asset(
                                   'assets/brand/nova_logo_dark.png',
                                   fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.shield_outlined,
+                                    color: Color(0xFF69A0FF),
+                                    size: 30,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
