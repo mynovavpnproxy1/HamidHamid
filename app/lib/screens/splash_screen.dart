@@ -78,6 +78,11 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 206,
                         height: 206,
                         fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.shield_outlined,
+                          size: 164,
+                          color: Color(0xFF3B82F6),
+                        ),
                       ),
                       SizedBox(height: 30),
                       Text(
