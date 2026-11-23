@@ -357,218 +357,370 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            title: const Text(
-              'NOVA VPN',
-              style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.5),
-            ),
-            actions: [
-              IconButton(
-                tooltip: _fa ? 'تنظیمات' : 'Settings',
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  );
-                  final language = await _storage.readLanguage();
-                  if (mounted) setState(() => _language = language);
-                },
-              ),
-            ],
-          ),
+          backgroundColor: const Color(0xFF070D1A),
           body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.shield_moon_outlined,
-                        size: 82,
-                        color: Color(0xFF35D0BA),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'JEYRAN GROUP',
-                        style: TextStyle(color: Colors.white54, letterSpacing: 2),
-                      ),
-                      const SizedBox(height: 24),
-                      Card(
-                        color: const Color(0xFF101A2B),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            children: [
-                              Text(
-                                _stateLabel,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: _connected
-                                      ? const Color(0xFF35D0BA)
-                                      : Colors.white70,
-                                ),
-                              ),
-                              if (_connected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 7),
-                                  child: Text(
-                                    _duration,
-                                    style: const TextStyle(color: Colors.white60),
-                                  ),
-                                ),
-                              if (_connected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 16),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _ConnectionMetric(
-                                        label: _fa ? 'دریافت' : 'Download',
-                                        value: _formatRate(_downloadSpeed),
-                                        icon: Icons.download_rounded,
-                                      ),
-                                      _ConnectionMetric(
-                                        label: _fa ? 'ارسال' : 'Upload',
-                                        value: _formatRate(_uploadSpeed),
-                                        icon: Icons.upload_rounded,
-                                      ),
-                                      _ConnectionMetric(
-                                        label: _fa ? 'تأخیر مسیر' : 'Latency',
-                                        value: _pingMs == null ? '—' : '$_pingMs ms',
-                                        icon: Icons.speed_rounded,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (_connected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _ConnectionMetric(
-                                        label: _fa ? 'دریافت کل' : 'Downloaded',
-                                        value: _formatBytes(_downloadedBytes),
-                                        icon: Icons.south_rounded,
-                                      ),
-                                      _ConnectionMetric(
-                                        label: _fa ? 'ارسال کل' : 'Uploaded',
-                                        value: _formatBytes(_uploadedBytes),
-                                        icon: Icons.north_rounded,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              const SizedBox(height: 22),
-                              SizedBox(
-                                width: 132,
-                                height: 132,
-                                child: OutlinedButton(
-                                  onPressed: _busy ? null : _toggleConnection,
-                                  style: OutlinedButton.styleFrom(
-                                    shape: const CircleBorder(),
-                                    side: const BorderSide(
-                                      color: Color(0xFF35D0BA),
-                                      width: 2,
-                                    ),
-                                    backgroundColor: const Color(0xFF35D0BA)
-                                        .withValues(alpha: .07),
-                                  ),
-                                  child: _busy
-                                      ? const SizedBox(
-                                          width: 34,
-                                          height: 34,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 3,
-                                          ),
-                                        )
-                                      : Icon(
-                                          _connected
-                                              ? Icons.stop_rounded
-                                              : Icons.power_settings_new,
-                                          size: 48,
-                                          color: const Color(0xFF35D0BA),
-                                        ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                _connected
-                                    ? (_fa
-                                        ? 'برای قطع لمس کن'
-                                        : 'Tap to disconnect')
-                                    : (_fa
-                                        ? 'برای اتصال لمس کن'
-                                        : 'Tap to connect'),
-                                style: const TextStyle(color: Colors.white60),
-                              ),
-                              if (_connection == _ConnectionUi.connecting &&
-                                  _attemptCount > 0)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(
-                                    _fa
-                                        ? 'تلاش $_currentAttempt از $_attemptCount'
-                                        : 'Attempt $_currentAttempt of $_attemptCount',
-                                    style: const TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              if (_connected && _activeServer != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    _activeServer!.name,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      OutlinedButton.icon(
-                        onPressed: _busy || _connected ? null : _chooseServer,
-                        icon: const Icon(Icons.public),
-                        label: Text(
-                          _preferredServer == null
-                              ? (_fa
-                                  ? 'انتخاب کشور و سرور'
-                                  : 'Choose country and server')
-                              : '${_fa ? 'انتخاب‌شده' : 'Selected'}: ${_preferredServer!.name}',
-                        ),
-                      ),
-                      if (_message != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(
-                            _message!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              height: 1.45,
-                            ),
-                          ),
-                        ),
-                    ],
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -120,
+                  right: -90,
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF235BFF).withValues(alpha: .10),
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  bottom: -150,
+                  left: -110,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF8A35FF).withValues(alpha: .08),
+                    ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF111D36),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(color: const Color(0xFF243B68)),
+                                ),
+                                child: Image.asset(
+                                  'assets/brand/nova_logo_dark.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('NOVA VPN', style: TextStyle(
+                                      color: Colors.white, fontSize: 19,
+                                      fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                                    SizedBox(height: 2),
+                                    Text('PRIVATE • FAST • SECURE', style: TextStyle(
+                                      color: Color(0xFF7184A9), fontSize: 9,
+                                      letterSpacing: 1.45, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: _fa ? 'تنظیمات' : 'Settings',
+                                onPressed: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                                  );
+                                  final language = await _storage.readLanguage();
+                                  if (mounted) setState(() => _language = language);
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: const Color(0xFF111D32),
+                                  foregroundColor: const Color(0xFFB8C7E4),
+                                  fixedSize: const Size(44, 44),
+                                ),
+                                icon: const Icon(Icons.tune_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF101A2D),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: const Color(0xFF202F4C)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 8, height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _connected ? const Color(0xFF21D6B2) :
+                                      (_connection == _ConnectionUi.connecting
+                                        ? const Color(0xFFFFC857) : const Color(0xFF71809D)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (_connected ? const Color(0xFF21D6B2) :
+                                          const Color(0xFF71809D)).withValues(alpha: .45),
+                                        blurRadius: 9,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 9),
+                                Text(_stateLabel, style: const TextStyle(
+                                  color: Color(0xFFDCE7FA), fontSize: 13,
+                                  fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 26),
+                          Center(
+                            child: SizedBox(
+                              width: 228,
+                              height: 228,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 218, height: 218,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color(0xFF29416E).withValues(alpha: .65),
+                                        width: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 190, height: 190,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          (_connected ? const Color(0xFF14CBA8) : const Color(0xFF2868FF))
+                                            .withValues(alpha: .22),
+                                          const Color(0xFF111D36).withValues(alpha: .04),
+                                        ],
+                                      ),
+                                      border: Border.all(
+                                        color: (_connected ? const Color(0xFF21D6B2) : const Color(0xFF3477FF))
+                                          .withValues(alpha: .45),
+                                        width: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 150, height: 150,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: _connected
+                                          ? const [Color(0xFF13BFA2), Color(0xFF087D9D)]
+                                          : const [Color(0xFF3978FF), Color(0xFF5436D8)],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (_connected ? const Color(0xFF13BFA2) : const Color(0xFF3978FF))
+                                            .withValues(alpha: .32),
+                                          blurRadius: 34, spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: _busy ? null : _toggleConnection,
+                                        child: Center(
+                                          child: _busy
+                                            ? const SizedBox(
+                                                width: 42, height: 42,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 3, color: Colors.white))
+                                            : Icon(
+                                                _connected ? Icons.pause_rounded : Icons.power_settings_new_rounded,
+                                                color: Colors.white, size: 64,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 17),
+                          Center(
+                            child: Text(
+                              _connected
+                                ? (_fa ? 'اتصال امن برقرار است' : 'Secure connection is active')
+                                : (_fa ? 'برای اتصال، دکمه را لمس کنید' : 'Tap the button to connect'),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFFD9E4F8), fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (_connected) ...[
+                            const SizedBox(height: 7),
+                            Center(child: Text(_duration, style: const TextStyle(
+                              color: Color(0xFF7F91B3), fontSize: 13,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ))),
+                          ],
+                          if (_connection == _ConnectionUi.connecting && _attemptCount > 0) ...[
+                            const SizedBox(height: 8),
+                            Center(child: Text(
+                              _fa ? 'تلاش $_currentAttempt از $_attemptCount' : 'Attempt $_currentAttempt of $_attemptCount',
+                              style: const TextStyle(color: Color(0xFFFFC857), fontSize: 12))),
+                          ],
+                          const SizedBox(height: 27),
+                          InkWell(
+                            onTap: _busy || _connected ? null : _chooseServer,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF142544), Color(0xFF101A30)],
+                                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF2A426B)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48, height: 48,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2E6BFF).withValues(alpha: .15),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Icon(Icons.public_rounded,
+                                      color: Color(0xFF69A0FF), size: 25),
+                                  ),
+                                  const SizedBox(width: 13),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(_fa ? 'موقعیت اتصال' : 'Connection location',
+                                          style: const TextStyle(color: Color(0xFF8295B7), fontSize: 11)),
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          _activeServer?.name ?? _preferredServer?.name ??
+                                            (_fa ? 'انتخاب خودکار سرور' : 'Auto select server'),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Colors.white,
+                                            fontSize: 15, fontWeight: FontWeight.w800),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(_fa ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                                    color: const Color(0xFF8CA4CE), size: 25),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (_connected) ...[
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF101A2D),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(color: const Color(0xFF202F4C)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _ConnectionMetric(label: _fa ? 'دریافت' : 'Download',
+                                    value: _formatRate(_downloadSpeed), icon: Icons.download_rounded),
+                                  _metricDivider(),
+                                  _ConnectionMetric(label: _fa ? 'ارسال' : 'Upload',
+                                    value: _formatRate(_uploadSpeed), icon: Icons.upload_rounded),
+                                  _metricDivider(),
+                                  _ConnectionMetric(label: _fa ? 'پینگ' : 'Ping',
+                                    value: _pingMs == null ? '—' : '$_pingMs ms',
+                                    icon: Icons.speed_rounded),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(child: _trafficTile(
+                                  _fa ? 'دریافت کل' : 'Total download',
+                                  _formatBytes(_downloadedBytes), Icons.south_rounded)),
+                                const SizedBox(width: 10),
+                                Expanded(child: _trafficTile(
+                                  _fa ? 'ارسال کل' : 'Total upload',
+                                  _formatBytes(_uploadedBytes), Icons.north_rounded)),
+                              ],
+                            ),
+                          ],
+                          if (_message != null) ...[
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.all(13),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3A2330).withValues(alpha: .55),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFF754052)),
+                              ),
+                              child: Text(_message!, textAlign: TextAlign.center,
+                                style: const TextStyle(color: Color(0xFFFFC5D0), height: 1.45, fontSize: 12)),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          Center(child: Text(
+                            _fa ? 'NOVA VPN  •  اتصال هوشمند و امن' : 'NOVA VPN  •  Smart and secure connection',
+                            style: const TextStyle(color: Color(0xFF526583), fontSize: 10, letterSpacing: .6))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
+
+  Widget _metricDivider() => Container(width: 1, height: 34, color: const Color(0xFF293A59));
+
+  Widget _trafficTile(String label, String value, IconData icon) => Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: const Color(0xFF101A2D),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: const Color(0xFF202F4C)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF69A0FF), size: 18),
+            const SizedBox(width: 9),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Color(0xFF8295B7), fontSize: 10)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+              ],
+            )),
+          ],
+        ),
+      );
+
 }
 
 
