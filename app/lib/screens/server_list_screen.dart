@@ -111,15 +111,20 @@ class _ServerListScreenState extends State<ServerListScreen> {
           selected: selected,
           onSelected: (_) => setState(() => _tab = index),
           showCheckmark: false,
-          backgroundColor: const Color(0xFF25242C),
-          selectedColor: const Color(0xFFE6E5EA),
+          backgroundColor: const Color(0xFF111D34),
+          selectedColor: const Color(0xFF315FD7),
           labelStyle: TextStyle(
-            color: selected ? const Color(0xFF17161B) : const Color(0xFFB9B8C1),
+            color: selected ? Colors.white : const Color(0xFFB9C5DD),
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          side: BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: BorderSide(
+              color: selected ? const Color(0xFF6C91FF) : const Color(0xFF263754),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
         ),
       ),
@@ -130,14 +135,23 @@ class _ServerListScreenState extends State<ServerListScreen> {
     final favorite = _favoriteIds.contains(server.id);
     final rowTitle = title ??
         (server.name.trim().isNotEmpty ? server.name : _locationName(server));
-    return InkWell(
-      onTap: () => _select(server),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 54),
-        padding: const EdgeInsetsDirectional.only(start: 14, end: 16),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF26252D), width: .7)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: const Color(0xFF101D33),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: favorite ? const Color(0xFF4567A5) : const Color(0xFF263A59),
+            width: favorite ? 1.5 : 1.1,
+          ),
         ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _select(server),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 58),
+            padding: const EdgeInsetsDirectional.only(start: 10, end: 14),
         child: Row(
           children: [
             IconButton(
@@ -171,6 +185,8 @@ class _ServerListScreenState extends State<ServerListScreen> {
             const SizedBox(width: 12),
             Text(_flag(server.countryCode), style: const TextStyle(fontSize: 21)),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -216,60 +232,118 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Widget _countryRow(String code, List<VpnServer> servers) {
     final expanded = _expandedCountries.contains(code);
     final first = servers.first;
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => setState(() {
-            if (expanded) {
-              _expandedCountries.remove(code);
-            } else {
-              _expandedCountries.add(code);
-            }
-          }),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 64),
-            padding: const EdgeInsetsDirectional.only(start: 14, end: 16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF26252D), width: .7)),
-            ),
-            child: Row(
-              children: [
-                Icon(expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    color: const Color(0xFF777680), size: 21),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_countryName(first),
-                          style: const TextStyle(
-                              color: Color(0xFFE1E0E6),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 3),
-                      Text(
-                        _fa ? 'مکان‌ها: ${servers.length}' : 'Locations: ${servers.length}',
-                        style: const TextStyle(color: Color(0xFF777680), fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(_flag(code), style: const TextStyle(fontSize: 25)),
-              ],
-            ),
+    final favoriteCount =
+        servers.where((server) => _favoriteIds.contains(server.id)).length;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: expanded
+                ? const [Color(0xFF142B4C), Color(0xFF0D1B31)]
+                : const [Color(0xFF121F35), Color(0xFF0D192B)],
           ),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: expanded
+                ? const Color(0xFF5687F4)
+                : const Color(0xFF30496D),
+            width: expanded ? 2.2 : 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2F65C8).withValues(alpha: expanded ? .20 : .09),
+              blurRadius: expanded ? 18 : 10,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        if (expanded)
-          ...servers.map((server) => _serverRow(
-                server,
-                title: _locationName(server) == server.name
-                    ? server.name
-                    : server.name.trim().isEmpty
+        child: Column(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => setState(() {
+                if (expanded) {
+                  _expandedCountries.remove(code);
+                } else {
+                  _expandedCountries.add(code);
+                }
+              }),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(15, 13, 16, 13),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF243A5D),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: const Color(0xFFB9D0FF),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_countryName(first),
+                              style: const TextStyle(
+                                  color: Color(0xFFF0F4FC),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 5),
+                          Text(
+                            _fa
+                                ? '${servers.length} سرور قابل انتخاب • ${favoriteCount} مورد علاقه'
+                                : '${servers.length} available servers • ${favoriteCount} favorites',
+                            style: const TextStyle(
+                                color: Color(0xFFA7B8D3), fontSize: 11),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _fa ? 'برای دیدن سرورها لمس کنید' : 'Tap to view servers',
+                            style: const TextStyle(
+                                color: Color(0xFF6FA0FF),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(_flag(code), style: const TextStyle(fontSize: 27)),
+                  ],
+                ),
+              ),
+            ),
+            if (expanded) ...[
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 14, end: 14),
+                child: Divider(
+                    height: 1, thickness: 1, color: const Color(0xFF45658F)),
+              ),
+              ...servers.map((server) => _serverRow(
+                    server,
+                    title: server.name.trim().isEmpty
                         ? _locationName(server)
                         : server.name,
-              )),
-      ],
+                  )),
+              const SizedBox(height: 7),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -312,7 +386,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-          backgroundColor: const Color(0xFF100F15),
+          backgroundColor: const Color(0xFF071020),
           body: SafeArea(
             child: FutureBuilder<List<VpnServer>>(
               future: _servers,
@@ -386,6 +460,26 @@ class _ServerListScreenState extends State<ServerListScreen> {
                       ),
                     ),
                     const SizedBox(height: 5),
+                    if (_tab == 0)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 12),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.touch_app_rounded,
+                                color: Color(0xFF78A5FF), size: 17),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _fa
+                                    ? 'برای افزودن هر سرور به مورد علاقه‌ها، ستارهٔ کنار همان سرور را لمس کنید.'
+                                    : 'Tap the star beside any server to save it to Favorites.',
+                                style: const TextStyle(
+                                    color: Color(0xFF9EAFCA), fontSize: 11, height: 1.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Expanded(
                       child: _tab == 1
                           ? _savedList(servers, favorites: true)
