@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   static const _serverKey = 'nova.selected_server';
   static const _languageKey = 'nova.language';
+  static const _favoriteServersKey = 'nova.favorite_servers';
+  static const _recentServersKey = 'nova.recent_servers';
 
   Future<String?> readServerId() async =>
       (await SharedPreferences.getInstance()).getString(_serverKey);
@@ -15,4 +17,34 @@ class StorageService {
 
   Future<void> writeLanguage(String language) async =>
       (await SharedPreferences.getInstance()).setString(_languageKey, language);
+
+  Future<List<String>> readFavoriteServerIds() async =>
+      (await SharedPreferences.getInstance())
+          .getStringList(_favoriteServersKey) ?? <String>[];
+
+  Future<List<String>> readRecentServerIds() async =>
+      (await SharedPreferences.getInstance())
+          .getStringList(_recentServersKey) ?? <String>[];
+
+  Future<bool> toggleFavoriteServer(String serverId) async {
+    final preferences = await SharedPreferences.getInstance();
+    final ids = preferences.getStringList(_favoriteServersKey) ?? <String>[];
+    final isFavorite = ids.contains(serverId);
+    if (isFavorite) {
+      ids.remove(serverId);
+    } else {
+      ids.insert(0, serverId);
+    }
+    await preferences.setStringList(_favoriteServersKey, ids);
+    return !isFavorite;
+  }
+
+  Future<void> recordRecentServer(String serverId) async {
+    final preferences = await SharedPreferences.getInstance();
+    final ids = preferences.getStringList(_recentServersKey) ?? <String>[];
+    ids.remove(serverId);
+    ids.insert(0, serverId);
+    if (ids.length > 20) ids.removeRange(20, ids.length);
+    await preferences.setStringList(_recentServersKey, ids);
+  }
 }
