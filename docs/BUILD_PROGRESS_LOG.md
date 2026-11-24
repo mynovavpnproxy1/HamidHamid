@@ -32,8 +32,9 @@ This log records verified repository changes and test evidence. A GitHub commit 
 - Both edited files were fetched again from `main` and their new blob SHAs verified:
   - `app/pubspec.yaml`: `3e2d03098eec1e75259b0bbbc73aa19438159bf3`
   - `app/lib/screens/splash_screen.dart`: `ef00896fbda5a1a3e51f49e1e1c397cea73b611e`
-- CI run #90 (run ID `45413283642`, commit `0f1899cf8e1d252f70246c3799c6256591266ea9`) completed: backend tests passed; Flutter formatting passed; Flutter analysis failed on one remaining error: `Image` was referenced in `app/test/widget_test.dart` without importing `package:flutter/material.dart`. The Flutter tests and APK build were skipped. Analyzer also reported informational deprecation/style notices, not additional errors.
+- CI run #90 (run ID `45413283642`, commit `0f1899cf8e1d252f70246c3799c6256591266ea9`) completed: backend tests passed; Flutter formatting passed; Flutter analysis failed on one remaining error: `Image` was referenced in `app/test/widget_test.dart` without importing `package:flutter/material.dart`. Flutter tests and APK build were skipped.
 - Fixed the remaining test import in commit `e8159305b88be8d24c41e8bf159f861c8304ca80`; resulting blob SHA for `app/test/widget_test.dart` is `b4a05b469e46d6164d441e4060fac317f0bb8442`.
+- CI run #91 (run ID `45416056741`, same commit) has now passed dependency resolution, Dart formatting, Flutter analysis, Flutter widget tests, and backend tests. At the latest check, `Build Android debug APK` was still running; artifact upload and final run conclusion remain pending.
 
 ## Explicitly not verified
 
@@ -45,8 +46,8 @@ This log records verified repository changes and test evidence. A GitHub commit 
 
 ## Next actions
 
-1. Inspect the CI run triggered by commit `e8159305b88be8d24c41e8bf159f861c8304ca80`.
-2. Fix only verified failures, commit, and rerun CI.
+1. Continue monitoring CI run #91 until the Android debug APK build and artifact upload complete.
+2. If build fails, inspect the exact job log and fix only the verified blocker.
 3. Download and verify the debug APK artifact only after the build job succeeds.
 4. Conduct physical-device traffic tests with a working profile supplied/authorized by the owner.
 5. Record measured results and only then assess release readiness.
