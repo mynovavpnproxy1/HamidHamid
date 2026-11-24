@@ -96,3 +96,23 @@ Implementation limitations:
 4. Run CI after each coherent UI milestone and verify the artifact before claiming a build.
 5. Install the debug APK on an Android device and test with an authorized working profile; verify TCP, DNS, IPv4/IPv6, UDP, upload/download, and disconnect behavior.
 6. Record measured results and only then assess release readiness.
+
+
+## User-requested visual refinements — 2026-11-24
+
+The user's two current NOVA screenshots were reviewed against the previously audited JumpJump reference media in Library:
+- Primary reference recording: `screen-۲۰۲۶۱۱۱۵-۱۱۰۰۱۲.mp4` (111.76 seconds).
+- Supplemental recording: `screen-۲۰۲۶۱۱۱۱-۱۶۲۰۰۹.mp4` (53.54 seconds).
+- Reference evidence includes the country/location selector, expanded server rows with outlined/selected stars, Favorites/Recent tabs, the animated connection state, and the branded home layout. JumpJump branding and third-party ad creatives remain excluded.
+
+Committed changes on `ui/jumpjump-reference`:
+- `1ed312dc18843ea83a5126d2a681610e4b4bcc6e`: make the country/location picker more dimensional with thicker blue borders, gradient cards, expanded-state glow, clearer server counts and an explicit Persian instruction explaining the star.
+- `54cdf2b6f06342cf51f169321a79ca56ec8ce982`: increase contrast of the inactive server favorite star so it is visible before selection.
+- The server-row star and cross-country Favorites tab were already implemented and persist server IDs through `StorageService`; tapping the star adds/removes that exact server ID, and the Favorites list resolves those IDs against the fetched server list. No separate favorite data model was introduced.
+- `e8dbf1db61cafb54c7811770ff76115dbe7cd24e`: add a gentle repeating blue halo animation to NOVA's home connection control to reduce the static appearance. Connection behavior is unchanged.
+- `b9c435676f4a5df86038b8669b216025c5177c29` and `828cc8d9fbf349a728def1b7ba07167b4d54f739`: configure Android launcher icon generation from NOVA's existing `assets/brand/nova_logo_dark.jpg`, using a dark navy adaptive-icon background. The CI workflow now runs `dart run flutter_launcher_icons` before formatting/analyzing/building.
+
+Validation status for these latest visual refinements:
+- CI has not yet been polled for the commits above; do not call the refinements build-verified until the new workflow finishes.
+- Run #99 (`45442033543`) did finish successfully and uploaded artifact `nova-vpn-debug-apk`, ID `14944906406`, for commit `1c5af90e5485526b4b0b641b8e3d52bf088e98e8`. This artifact predates the current visual refinements and launcher-icon generation change.
+- The user's supplied screenshots show the currently installed APK appearance; they are not evidence that the latest commits have been installed.
