@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../services/storage_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -10,6 +12,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _storage = StorageService();
   String _language = 'fa';
+
+  bool get _fa => _language == 'fa';
 
   @override
   void initState() {
@@ -19,36 +23,231 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Widget _sectionTitle(String title) => Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(5, 18, 5, 8),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF8E8C98),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+
+  Widget _settingsCard(List<Widget> children) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF191820),
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: const Color(0xFF2B2933)),
+        ),
+        child: Column(children: children),
+      );
+
+  Widget _comingSoonRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) =>
+      ListTile(
+        enabled: false,
+        leading: Icon(icon, color: const Color(0xFF777580), size: 20),
+        title: Text(
+          title,
+          style: const TextStyle(
+              color: Color(0xFFB4B2BD), fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: Color(0xFF777580), fontSize: 10),
+        ),
+        trailing: Text(
+          _fa ? 'به‌زودی' : 'Soon',
+          style: const TextStyle(color: Color(0xFF66646F), fontSize: 9),
+        ),
+        dense: true,
+      );
+
+  Future<void> _changeLanguage(String? value) async {
+    if (value == null) return;
+    await _storage.writeLanguage(value);
+    if (mounted) setState(() => _language = value);
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(_language == 'fa' ? 'تنظیمات' : 'Settings')),
-        body: ListView(padding: const EdgeInsets.all(16), children: [
-          ListTile(
-            title: Text(_language == 'fa' ? 'زبان' : 'Language'),
-            trailing: DropdownButton<String>(
-              value: _language,
-              items: const [
-                DropdownMenuItem(value: 'fa', child: Text('فارسی')),
-                DropdownMenuItem(value: 'en', child: Text('English')),
+  Widget build(BuildContext context) => Directionality(
+        textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
+        child: Scaffold(
+          backgroundColor: const Color(0xFF100F15),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(17, 10, 17, 24),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: _fa ? 'بستن' : 'Close',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded,
+                          color: Color(0xFFB8B6C1)),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _fa ? 'تنظیمات' : 'Settings',
+                      style: const TextStyle(
+                        color: Color(0xFFF0EFF4),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    const Icon(Icons.tune_rounded,
+                        color: Color(0xFFE0DFE6), size: 20),
+                  ],
+                ),
+                _sectionTitle(_fa ? 'حساب کاربری' : 'Account'),
+                _settingsCard([
+                  _comingSoonRow(
+                    icon: Icons.account_circle_outlined,
+                    title: _fa ? 'ورود / ثبت‌نام' : 'Sign in / Create account',
+                    subtitle: _fa
+                        ? 'مدیریت حساب در حال توسعه است'
+                        : 'Account management is under development',
+                  ),
+                ]),
+                _sectionTitle(_fa ? 'تبلیغات' : 'Advertising'),
+                _settingsCard([
+                  _comingSoonRow(
+                    icon: Icons.campaign_outlined,
+                    title: _fa ? 'نمایش تبلیغات بنری' : 'Banner ads',
+                    subtitle: _fa
+                        ? 'تنظیمات پس از اتصال ارائه‌دهنده تبلیغات فعال می‌شود'
+                        : 'Controls will be available after an ad provider is integrated',
+                  ),
+                ]),
+                _sectionTitle(_fa ? 'شبکه' : 'Network'),
+                _settingsCard([
+                  _comingSoonRow(
+                    icon: Icons.route_outlined,
+                    title: _fa ? 'حالت مسیریابی هوشمند' : 'Smart routing mode',
+                    subtitle: _fa
+                        ? 'هنوز در موتور فعلی پیاده‌سازی نشده است'
+                        : 'Not implemented in the current engine integration',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.call_split_rounded,
+                    title: _fa ? 'تقسیم تونل' : 'Split tunneling',
+                    subtitle: _fa
+                        ? 'انتخاب برنامه‌های عبوری از VPN بعداً اضافه می‌شود'
+                        : 'Per-app VPN routing will be added later',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.restart_alt_rounded,
+                    title: _fa ? 'بازنشانی تنظیمات' : 'Restore defaults',
+                    subtitle: _fa
+                        ? 'در نسخه فعلی تنظیم قابل بازنشانی دیگری وجود ندارد'
+                        : 'There are no additional configurable settings to reset yet',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.network_check_rounded,
+                    title: _fa ? 'تشخیص شبکه' : 'Network diagnosis',
+                    subtitle: _fa
+                        ? 'آزمایش‌های شبکه هنوز اضافه نشده‌اند'
+                        : 'Network diagnostics are not available yet',
+                  ),
+                ]),
+                _sectionTitle(_fa ? 'برنامه' : 'Application'),
+                _settingsCard([
+                  ListTile(
+                    leading: const Icon(Icons.language_rounded,
+                        color: Color(0xFF7EA6FF), size: 20),
+                    title: Text(
+                      _fa ? 'زبان' : 'Language',
+                      style: const TextStyle(
+                          color: Color(0xFFE0DFE7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700),
+                    ),
+                    trailing: DropdownButton<String>(
+                      value: _language,
+                      dropdownColor: const Color(0xFF24222B),
+                      underline: const SizedBox.shrink(),
+                      style: const TextStyle(
+                          color: Color(0xFFE0DFE7), fontSize: 12),
+                      items: const [
+                        DropdownMenuItem(value: 'fa', child: Text('فارسی')),
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      ],
+                      onChanged: _changeLanguage,
+                    ),
+                    dense: true,
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.mail_outline_rounded,
+                    title: _fa ? 'تماس با ما' : 'Contact us',
+                    subtitle: _fa
+                        ? 'راه ارتباطی رسمی هنوز ثبت نشده است'
+                        : 'An official contact channel has not been configured',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.help_outline_rounded,
+                    title: _fa ? 'سؤالات متداول' : 'Frequently asked questions',
+                    subtitle: _fa
+                        ? 'راهنمای برنامه در حال آماده‌سازی است'
+                        : 'The app guide is being prepared',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.privacy_tip_outlined,
+                    title: _fa ? 'سیاست حفظ حریم خصوصی' : 'Privacy policy',
+                    subtitle: _fa
+                        ? 'پیش از انتشار عمومی باید تکمیل شود'
+                        : 'Must be completed before public release',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.description_outlined,
+                    title: _fa ? 'شرایط استفاده از خدمات' : 'Terms of service',
+                    subtitle: _fa
+                        ? 'پیش از انتشار عمومی باید تکمیل شود'
+                        : 'Must be completed before public release',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  ListTile(
+                    enabled: false,
+                    leading: const Icon(Icons.info_outline_rounded,
+                        color: Color(0xFF777580), size: 20),
+                    title: Text(
+                      _fa ? 'نسخه برنامه' : 'App version',
+                      style: const TextStyle(
+                          color: Color(0xFFB4B2BD), fontSize: 13),
+                    ),
+                    trailing: const Text('0.1.0',
+                        style: TextStyle(
+                            color: Color(0xFF777580), fontSize: 11)),
+                    dense: true,
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    'NOVA VPN',
+                    style: TextStyle(
+                      color: const Color(0xFF777580).withValues(alpha: .65),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                ),
               ],
-              onChanged: (value) async {
-                if (value == null) return;
-                await _storage.writeLanguage(value);
-                if (mounted) setState(() => _language = value);
-              },
             ),
           ),
-          const Divider(),
-          ListTile(
-            title: Text(_language == 'fa' ? 'دربارهٔ NOVA VPN' : 'About NOVA VPN'),
-            subtitle: const Text('NOVA VPN · 0.1.0'),
-          ),
-          ListTile(
-            title: Text(_language == 'fa' ? 'حریم خصوصی' : 'Privacy'),
-            subtitle: Text(_language == 'fa'
-                ? 'سیاست حریم خصوصی تا پیش از انتشار عمومی باید تکمیل شود.'
-                : 'The privacy policy must be completed before public release.'),
-          ),
-        ]),
+        ),
       );
 }
