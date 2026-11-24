@@ -81,6 +81,8 @@ jobs:
           fi
       - name: Resolve dependencies
         run: flutter pub get
+      - name: Generate NOVA Android launcher icons
+        run: dart run flutter_launcher_icons
       - name: Format Dart sources
         run: dart format lib test
       - name: Check Dart formatting
