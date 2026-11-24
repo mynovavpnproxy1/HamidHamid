@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
 
@@ -124,6 +122,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return '${(bytesPerSecond / 1024).toStringAsFixed(1)} KB/s';
     }
     return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(2)} MB/s';
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
   @override
@@ -802,6 +811,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.speed_rounded,
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _fa
+                              ? 'دریافت کل: ${_formatBytes(_downloadedBytes)}  ·  ارسال کل: ${_formatBytes(_uploadedBytes)}'
+                              : 'Downloaded: ${_formatBytes(_downloadedBytes)}  ·  Uploaded: ${_formatBytes(_uploadedBytes)}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Color(0xFF777680), fontSize: 10),
                         ),
                       ],
                     ],
