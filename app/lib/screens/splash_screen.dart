@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _fade,
                 child: ScaleTransition(
                   scale: _scale,
-                  child: const Column(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
