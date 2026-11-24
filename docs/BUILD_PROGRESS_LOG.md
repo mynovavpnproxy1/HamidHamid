@@ -116,3 +116,5 @@ Validation status for these latest visual refinements:
 - CI has not yet been polled for the commits above; do not call the refinements build-verified until the new workflow finishes.
 - Run #99 (`45442033543`) did finish successfully and uploaded artifact `nova-vpn-debug-apk`, ID `14944906406`, for commit `1c5af90e5485526b4b0b641b8e3d52bf088e98e8`. This artifact predates the current visual refinements and launcher-icon generation change.
 - The user's supplied screenshots show the currently installed APK appearance; they are not evidence that the latest commits have been installed.
+
+- `0f2f3502f7d09d8df5233e3231ae0f2058f9debf`: align the home header with the NOVA identity by displaying the existing NOVA logo asset and a bilingual privacy/speed/security tagline; shift the home background to the navy palette. No JumpJump brand artwork was copied.
