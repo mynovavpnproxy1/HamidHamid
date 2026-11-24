@@ -423,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ? (_currentAttempt / _attemptCount).clamp(0.0, 1.0).toDouble()
         : null;
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0A10),
+      backgroundColor: const Color(0xFF071020),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
@@ -585,12 +585,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 Row(
                   children: [
-                    const Text('NOVA VPN  ·  0.1.0',
-                        style: TextStyle(
-                            color: Color(0xFF686773),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600)),
-                    const Spacer(),
                     IconButton(
                       tooltip: _fa ? 'تنظیمات' : 'Settings',
                       onPressed: () async {
@@ -601,8 +595,39 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         final language = await _storage.readLanguage();
                         if (mounted) setState(() => _language = language);
                       },
-                      icon: const Icon(Icons.menu_rounded,
-                          color: Color(0xFFB9B8C1), size: 25),
+                      icon: const Icon(Icons.tune_rounded,
+                          color: Color(0xFFB9C9E4), size: 25),
+                    ),
+                    const Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('NOVA VPN',
+                            style: TextStyle(
+                                color: Color(0xFFF0F4FF),
+                                fontSize: 23,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2)),
+                        const SizedBox(height: 4),
+                        Text(
+                          _fa ? 'خصوصی  •  سریع  •  امن' : 'PRIVATE  •  FAST  •  SECURE',
+                          style: const TextStyle(
+                              color: Color(0xFF788CAB),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Image.asset(
+                        'assets/brand/nova_logo_dark.jpg',
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ],
                 ),
