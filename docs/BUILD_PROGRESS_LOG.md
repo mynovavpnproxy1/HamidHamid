@@ -11,8 +11,8 @@ This log records verified repository changes and test evidence. A GitHub commit 
 
 | Stage | Scope | Status |
 |---|---|---|
-| 1 | Audit engine integration, Android project configuration, and build pipeline | In progress |
-| 2 | Fix source/dependency/Android integration issues found by audit | In progress |
+| 1 | Audit engine integration, Android project configuration, and build pipeline | Complete (repository-level) |
+| 2 | Fix source/dependency/Android integration issues found by audit | In progress (two analyzer blockers fixed; CI confirmation pending) |
 | 3 | Produce a debug APK through CI and retain the artifact | Not verified |
 | 4 | Test a valid owner-supplied profile on a physical Android device (TCP, DNS, IPv4/IPv6, UDP, upload/download) | Blocked until APK and authorized working profile/device test |
 | 5 | Review stability, security, performance evidence, then determine release readiness | Not started |
@@ -32,7 +32,7 @@ This log records verified repository changes and test evidence. A GitHub commit 
 - Both edited files were fetched again from `main` and their new blob SHAs verified:
   - `app/pubspec.yaml`: `3e2d03098eec1e75259b0bbbc73aa19438159bf3`
   - `app/lib/screens/splash_screen.dart`: `ef00896fbda5a1a3e51f49e1e1c397cea73b611e`
-- CI run #90 (run ID `45413283642`, commit `0f1899cf8e1d252f70246c3799c6256591266ea9`) was observed in progress. Its final result has not yet been verified.
+- CI run #90 (run ID `45413283642`, commit `0f1899cf8e1d252f70246c3799c6256591266ea9`) passed the backend test job. The Flutter job was still running at the latest check; analyzer, Flutter tests, and APK build are not yet verified.
 
 ## Explicitly not verified
 
