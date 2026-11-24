@@ -19,10 +19,11 @@ class HomeScreen extends StatefulWidget {
 
 enum _ConnectionUi { disconnected, connecting, connected, disconnecting, error }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
   final StorageService _storage = StorageService();
   final VpnService _vpn = VpnService();
+  late final AnimationController _pulseController;
 
   StreamSubscription<V2RayStatus>? _statusSubscription;
   _ConnectionUi _connection = _ConnectionUi.disconnected;
@@ -50,6 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
     _storage.readLanguage().then((language) {
       if (mounted) setState(() => _language = language);
     });
@@ -137,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _pulseController.dispose();
     _statusSubscription?.cancel();
     _api.close();
     super.dispose();
@@ -623,60 +629,70 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: _busy ? null : _toggleConnection,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 260),
-                    width: 222,
-                    height: 76,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(48),
-                      color: _connected
-                          ? null
-                          : const Color(0xFF24232B),
-                      gradient: _connected
-                          ? const LinearGradient(
-                              colors: [Color(0xFF477EFF), Color(0xFF25C6D5)],
-                            )
-                          : null,
-                      border: Border.all(
-                        color: _connected
-                            ? const Color(0xFF4D9AFF)
-                            : const Color(0xFF34333C),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: AnimatedAlign(
-                      duration: const Duration(milliseconds: 260),
-                      curve: Curves.easeOutCubic,
-                      alignment: _connected
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        width: 64,
-                        height: 64,
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    final pulse = _pulseController.value;
+                    return GestureDetector(
+                      onTap: _busy ? null : _toggleConnection,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 260),
+                        width: 222,
+                        height: 76,
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFECEBF0),
+                          borderRadius: BorderRadius.circular(48),
+                          color: _connected ? null : const Color(0xFF101D32),
+                          gradient: _connected
+                              ? const LinearGradient(
+                                  colors: [Color(0xFF477EFF), Color(0xFF25C6D5)],
+                                )
+                              : null,
+                          border: Border.all(
+                            color: _connected
+                                ? const Color(0xFF4D9AFF)
+                                : const Color(0xFF344B70),
+                            width: 1.5,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: .22),
-                              blurRadius: 12,
-                              offset: const Offset(0, 3),
+                              color: const Color(0xFF367CFF).withValues(
+                                  alpha: .07 + (pulse * .11)),
+                              blurRadius: 18 + (pulse * 18),
+                              spreadRadius: 1 + (pulse * 2),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          _connected
-                              ? Icons.power_settings_new_rounded
-                              : Icons.power_settings_new_rounded,
-                          color: const Color(0xFF3B3A44),
-                          size: 31,
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeOutCubic,
+                          alignment: _connected
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFECEBF0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: .22),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.power_settings_new_rounded,
+                              color: Color(0xFF3B3A44),
+                              size: 31,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 14),
                 Text(
