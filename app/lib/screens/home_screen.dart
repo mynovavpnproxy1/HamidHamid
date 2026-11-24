@@ -41,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _message;
   bool _busy = false;
   bool _failoverRunning = false;
+  bool _cancelRequested = false;
+  bool _selectedFavorite = false;
   int _currentAttempt = 0;
   int _attemptCount = 0;
 
@@ -152,16 +154,20 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     if (selected == null) {
       await _storage.writeServerId('');
+      if (!mounted) return;
       setState(() {
         _preferredServer = null;
+        _selectedFavorite = false;
         _message = null;
       });
       return;
     }
     await _storage.writeServerId(selected.id);
+    final favorites = await _storage.readFavoriteServerIds();
     if (mounted) {
       setState(() {
         _preferredServer = selected;
+        _selectedFavorite = favorites.contains(selected.id);
         _message = null;
       });
     }
@@ -204,6 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _connectWithFallback() async {
+    _cancelRequested = false;
     setState(() {
       _busy = true;
       _failoverRunning = true;
@@ -216,6 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // Fresh metadata is fetched each time so owner changes need no APK update.
       final servers = await _api.fetchServers();
+      if (_cancelRequested) throw const _ConnectionCancelledException();
       if (!mounted) return;
       if (servers.isEmpty) {
         setState(() {
@@ -228,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final savedId = await _storage.readServerId();
+      if (_cancelRequested) throw const _ConnectionCancelledException();
       if (!mounted) return;
       final preferredId = _preferredServer?.id ?? savedId;
       final savedServer = servers.where((server) => server.id == preferredId);
@@ -273,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final connectedServer = await connectWithFallback<VpnServer>(
         candidates: candidates,
-        isFatal: (error) =>
+        isFatal: (error) => _cancelRequested ||
             error is ApiException || error is VpnPermissionException,
         onAttempt: (server, index) {
           if (!mounted) return;
@@ -288,17 +297,30 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         attempt: (server) async {
           // Profile remains transient and is requested only for this attempt.
+          if (_cancelRequested) throw const _ConnectionCancelledException();
           final profile = await _api.fetchServerConfig(server.id);
+          if (_cancelRequested) throw const _ConnectionCancelledException();
           await _vpn.connect(profile: profile, remark: server.name);
         },
       );
 
+      if (_cancelRequested) throw const _ConnectionCancelledException();
       await _storage.writeServerId(connectedServer.id);
+      final favorites = await _storage.readFavoriteServerIds();
       if (mounted) {
         setState(() {
           _activeServer = connectedServer;
           _preferredServer = connectedServer;
+          _selectedFavorite = favorites.contains(connectedServer.id);
           _connection = _ConnectionUi.connected;
+          _message = null;
+        });
+      }
+    } on _ConnectionCancelledException {
+      if (mounted) {
+        setState(() {
+          _connection = _ConnectionUi.disconnected;
+          _activeServer = null;
           _message = null;
         });
       }
@@ -335,12 +357,15 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _connection = _ConnectionUi.error;
+          _connection = _cancelRequested ? _ConnectionUi.disconnected : _ConnectionUi.error;
           _activeServer = null;
-          _message = _fa ? 'اتصال VPN برقرار نشد.' : 'VPN connection failed.';
+          _message = _cancelRequested
+              ? null
+              : (_fa ? 'اتصال VPN برقرار نشد.' : 'VPN connection failed.');
         });
       }
     } finally {
+      _cancelRequested = false;
       _failoverRunning = false;
       if (mounted) setState(() => _busy = false);
     }
@@ -354,353 +379,470 @@ class _HomeScreenState extends State<HomeScreen> {
         _ConnectionUi.error => _fa ? 'خطا' : 'Error',
       };
 
+
+  String _flag(String? code) {
+    if (code == null || code.length != 2) return '🌐';
+    final normalized = code.toUpperCase();
+    if (!RegExp(r'^[A-Z]{2}$').hasMatch(normalized)) return '🌐';
+    return String.fromCharCodes(
+      normalized.codeUnits.map((unit) => 0x1F1E6 + unit - 0x41),
+    );
+  }
+
+  VpnServer? get _displayServer => _activeServer ?? _preferredServer;
+
+  Future<void> _toggleSelectedFavorite() async {
+    final selected = _displayServer;
+    if (selected == null) return;
+    final favorite = await _storage.toggleFavoriteServer(selected.id);
+    if (mounted) setState(() => _selectedFavorite = favorite);
+  }
+
+  Future<void> _cancelConnection() async {
+    if (!_busy || _connection != _ConnectionUi.connecting) return;
+    _cancelRequested = true;
+    if (mounted) {
+      setState(() {
+        _message = _fa ? 'در حال لغو اتصال…' : 'Cancelling connection…';
+      });
+    }
+    try {
+      await _vpn.disconnect();
+    } catch (_) {
+      // The in-flight attempt observes the cancellation flag and exits.
+    }
+  }
+
+  Widget _buildConnectingPage() {
+    final selected = _activeServer;
+    final progress = _attemptCount > 0
+        ? (_currentAttempt / _attemptCount).clamp(0.0, 1.0)
+        : null;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0A10),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: _fa ? 'لغو اتصال' : 'Cancel connection',
+                    onPressed: _cancelConnection,
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFFB8B7C0)),
+                  ),
+                  const Spacer(),
+                  const Text('NOVA VPN  ·  0.1.0',
+                      style: TextStyle(color: Color(0xFF686773), fontSize: 10)),
+                ],
+              ),
+              const Spacer(),
+              AnimatedRotation(
+                turns: _busy ? 1 : 0,
+                duration: const Duration(seconds: 3),
+                curve: Curves.easeInOut,
+                child: Container(
+                  width: 206,
+                  height: 206,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF254A88), width: 1.4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2D70FF).withValues(alpha: .14),
+                        blurRadius: 34,
+                        spreadRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.public_rounded,
+                        size: 132, color: Color(0xFF4387FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text('NOVA VPN',
+                  style: TextStyle(
+                    color: Color(0xFF5E91FF),
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                  )),
+              const SizedBox(height: 22),
+              Text(_fa ? 'در حال اتصال' : 'Connecting',
+                  style: const TextStyle(
+                      color: Color(0xFF4C91FF),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    selected?.name ??
+                        (_fa ? 'Auto Location' : 'Auto Location'),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700),
+                  ),
+                  if (selected != null) ...[
+                    const SizedBox(width: 9),
+                    Text(_flag(selected.countryCode),
+                        style: const TextStyle(fontSize: 20)),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                _message ?? (_fa ? 'در حال آماده‌سازی اتصال…' : 'Preparing connection…'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF9B99A5), fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: 150,
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 4,
+                  backgroundColor: const Color(0xFF20202A),
+                  color: const Color(0xFF42C9E8),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              if (_attemptCount > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _fa
+                      ? 'تلاش $_currentAttempt از $_attemptCount'
+                      : 'Attempt $_currentAttempt of $_attemptCount',
+                  style: const TextStyle(color: Color(0xFF85838E), fontSize: 10),
+                ),
+              ],
+              const Spacer(),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF191820),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF383640)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.hourglass_bottom_rounded,
+                        color: Color(0xFFFFC34D), size: 17),
+                    const SizedBox(width: 9),
+                    Flexible(
+                      child: Text(
+                        _fa
+                            ? 'لطفاً تا پایان اتصال در این صفحه بمانید'
+                            : 'Please stay on this page while connecting',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Color(0xFFFFC34D), fontSize: 11),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Directionality(
+  Widget build(BuildContext context) {
+    if (_connection == _ConnectionUi.connecting) {
+      return Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
-        child: Scaffold(
-          backgroundColor: const Color(0xFF070D1A),
-          body: SafeArea(
-            child: Stack(
+        child: _buildConnectingPage(),
+      );
+    }
+
+    final selected = _displayServer;
+    final selectedName = selected?.name.trim().isNotEmpty == true
+        ? selected!.name
+        : (_fa ? 'Auto Location' : 'Auto Location');
+
+    return Directionality(
+      textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0B0A10),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+            child: Column(
               children: [
-                Positioned(
-                  top: -120,
-                  right: -90,
-                  child: Container(
-                    width: 280,
-                    height: 280,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF235BFF).withValues(alpha: .10),
+                Row(
+                  children: [
+                    const Text('NOVA VPN  ·  0.1.0',
+                        style: TextStyle(
+                            color: Color(0xFF686773),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: _fa ? 'تنظیمات' : 'Settings',
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const SettingsScreen()),
+                        );
+                        final language = await _storage.readLanguage();
+                        if (mounted) setState(() => _language = language);
+                      },
+                      icon: const Icon(Icons.menu_rounded,
+                          color: Color(0xFFB9B8C1), size: 25),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                const Text(
+                  'NOVA VPN',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF5C8FFF),
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    letterSpacing: -.8,
                   ),
                 ),
-                Positioned(
-                  bottom: -150,
-                  left: -110,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF8A35FF).withValues(alpha: .08),
-                    ),
+                if (_connected) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    _duration,
+                    style: const TextStyle(
+                        color: Color(0xFF8F8D99),
+                        fontSize: 11,
+                        fontFeatures: [FontFeature.tabularFigures()]),
                   ),
-                ),
-                SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 460),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 46,
-                                height: 46,
-                                padding: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF111D36),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(color: const Color(0xFF243B68)),
-                                ),
-                                child: Image.asset(
-                                  'assets/brand/nova_logo_dark.jpg',
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.shield_outlined,
-                                    color: Color(0xFF69A0FF),
-                                    size: 30,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('NOVA VPN', style: TextStyle(
-                                      color: Colors.white, fontSize: 19,
-                                      fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                                    SizedBox(height: 2),
-                                    Text('PRIVATE • FAST • SECURE', style: TextStyle(
-                                      color: Color(0xFF7184A9), fontSize: 9,
-                                      letterSpacing: 1.45, fontWeight: FontWeight.w700)),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: _fa ? 'تنظیمات' : 'Settings',
-                                onPressed: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                                  );
-                                  final language = await _storage.readLanguage();
-                                  if (mounted) setState(() => _language = language);
-                                },
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFF111D32),
-                                  foregroundColor: const Color(0xFFB8C7E4),
-                                  fixedSize: const Size(44, 44),
-                                ),
-                                icon: const Icon(Icons.tune_rounded),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF101A2D),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: const Color(0xFF202F4C)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 8, height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _connected ? const Color(0xFF21D6B2) :
-                                      (_connection == _ConnectionUi.connecting
-                                        ? const Color(0xFFFFC857) : const Color(0xFF71809D)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (_connected ? const Color(0xFF21D6B2) :
-                                          const Color(0xFF71809D)).withValues(alpha: .45),
-                                        blurRadius: 9,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 9),
-                                Text(_stateLabel, style: const TextStyle(
-                                  color: Color(0xFFDCE7FA), fontSize: 13,
-                                  fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 26),
-                          Center(
-                            child: SizedBox(
-                              width: 228,
-                              height: 228,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: 218, height: 218,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: const Color(0xFF29416E).withValues(alpha: .65),
-                                        width: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 190, height: 190,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: RadialGradient(
-                                        colors: [
-                                          (_connected ? const Color(0xFF14CBA8) : const Color(0xFF2868FF))
-                                            .withValues(alpha: .22),
-                                          const Color(0xFF111D36).withValues(alpha: .04),
-                                        ],
-                                      ),
-                                      border: Border.all(
-                                        color: (_connected ? const Color(0xFF21D6B2) : const Color(0xFF3477FF))
-                                          .withValues(alpha: .45),
-                                        width: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 150, height: 150,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: _connected
-                                          ? const [Color(0xFF13BFA2), Color(0xFF087D9D)]
-                                          : const [Color(0xFF3978FF), Color(0xFF5436D8)],
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: (_connected ? const Color(0xFF13BFA2) : const Color(0xFF3978FF))
-                                            .withValues(alpha: .32),
-                                          blurRadius: 34, spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      shape: const CircleBorder(),
-                                      child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: _busy ? null : _toggleConnection,
-                                        child: Center(
-                                          child: _busy
-                                            ? const SizedBox(
-                                                width: 42, height: 42,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 3, color: Colors.white))
-                                            : Icon(
-                                                _connected ? Icons.pause_rounded : Icons.power_settings_new_rounded,
-                                                color: Colors.white, size: 64,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 17),
-                          Center(
-                            child: Text(
-                              _connected
-                                ? (_fa ? 'اتصال امن برقرار است' : 'Secure connection is active')
-                                : (_fa ? 'برای اتصال، دکمه را لمس کنید' : 'Tap the button to connect'),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFD9E4F8), fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          if (_connected) ...[
-                            const SizedBox(height: 7),
-                            Center(child: Text(_duration, style: const TextStyle(
-                              color: Color(0xFF7F91B3), fontSize: 13,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                            ))),
-                          ],
-                          if (_connection == _ConnectionUi.connecting && _attemptCount > 0) ...[
-                            const SizedBox(height: 8),
-                            Center(child: Text(
-                              _fa ? 'تلاش $_currentAttempt از $_attemptCount' : 'Attempt $_currentAttempt of $_attemptCount',
-                              style: const TextStyle(color: Color(0xFFFFC857), fontSize: 12))),
-                          ],
-                          const SizedBox(height: 27),
-                          InkWell(
-                            onTap: _busy || _connected ? null : _chooseServer,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF142544), Color(0xFF101A30)],
-                                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF2A426B)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 48, height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2E6BFF).withValues(alpha: .15),
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: const Icon(Icons.public_rounded,
-                                      color: Color(0xFF69A0FF), size: 25),
-                                  ),
-                                  const SizedBox(width: 13),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(_fa ? 'موقعیت اتصال' : 'Connection location',
-                                          style: const TextStyle(color: Color(0xFF8295B7), fontSize: 11)),
-                                        const SizedBox(height: 5),
-                                        Text(
-                                          _activeServer?.name ?? _preferredServer?.name ??
-                                            (_fa ? 'انتخاب خودکار سرور' : 'Auto select server'),
-                                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(color: Colors.white,
-                                            fontSize: 15, fontWeight: FontWeight.w800),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(_fa ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
-                                    color: const Color(0xFF8CA4CE), size: 25),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (_connected) ...[
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF101A2D),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: const Color(0xFF202F4C)),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _ConnectionMetric(label: _fa ? 'دریافت' : 'Download',
-                                    value: _formatRate(_downloadSpeed), icon: Icons.download_rounded),
-                                  _metricDivider(),
-                                  _ConnectionMetric(label: _fa ? 'ارسال' : 'Upload',
-                                    value: _formatRate(_uploadSpeed), icon: Icons.upload_rounded),
-                                  _metricDivider(),
-                                  _ConnectionMetric(label: _fa ? 'پینگ' : 'Ping',
-                                    value: _pingMs == null ? '—' : '$_pingMs ms',
-                                    icon: Icons.speed_rounded),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(child: _trafficTile(
-                                  _fa ? 'دریافت کل' : 'Total download',
-                                  _formatBytes(_downloadedBytes), Icons.south_rounded)),
-                                const SizedBox(width: 10),
-                                Expanded(child: _trafficTile(
-                                  _fa ? 'ارسال کل' : 'Total upload',
-                                  _formatBytes(_uploadedBytes), Icons.north_rounded)),
-                              ],
+                ],
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: _busy ? null : _toggleConnection,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    width: 222,
+                    height: 76,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(48),
+                      color: _connected
+                          ? null
+                          : const Color(0xFF24232B),
+                      gradient: _connected
+                          ? const LinearGradient(
+                              colors: [Color(0xFF477EFF), Color(0xFF25C6D5)],
+                            )
+                          : null,
+                      border: Border.all(
+                        color: _connected
+                            ? const Color(0xFF4D9AFF)
+                            : const Color(0xFF34333C),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      alignment: _connected
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFECEBF0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: .22),
+                              blurRadius: 12,
+                              offset: const Offset(0, 3),
                             ),
                           ],
-                          if (_message != null) ...[
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.all(13),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3A2330).withValues(alpha: .55),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: const Color(0xFF754052)),
-                              ),
-                              child: Text(_message!, textAlign: TextAlign.center,
-                                style: const TextStyle(color: Color(0xFFFFC5D0), height: 1.45, fontSize: 12)),
-                            ),
-                          ],
-                          const SizedBox(height: 20),
-                          Center(child: Text(
-                            _fa ? 'NOVA VPN  •  اتصال هوشمند و امن' : 'NOVA VPN  •  Smart and secure connection',
-                            style: const TextStyle(color: Color(0xFF526583), fontSize: 10, letterSpacing: .6))),
-                        ],
+                        ),
+                        child: Icon(
+                          _connected
+                              ? Icons.power_settings_new_rounded
+                              : Icons.power_settings_new_rounded,
+                          color: const Color(0xFF3B3A44),
+                          size: 31,
+                        ),
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+                Text(
+                  _connected
+                      ? (_fa ? 'متصل' : 'Connected')
+                      : _stateLabel,
+                  style: TextStyle(
+                    color: _connected
+                        ? const Color(0xFF4BD7A0)
+                        : const Color(0xFFB8B6C1),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 92),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF14131A),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFF24232C)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _fa ? 'جایگاه تبلیغات NOVA' : 'NOVA ad placement',
+                        style: const TextStyle(
+                            color: Color(0xFF45444E), fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB91B1A22),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: const Color(0xFF34323D)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .28),
+                        blurRadius: 18,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _fa ? 'انتخاب سرور' : 'Select server',
+                              style: const TextStyle(
+                                  color: Color(0xFFAAA8B3), fontSize: 10),
+                            ),
+                          ),
+                          const Icon(Icons.list_alt_rounded,
+                              color: Color(0xFF8C8A96), size: 17),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Material(
+                        color: const Color(0xFF0E0D14),
+                        borderRadius: BorderRadius.circular(30),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(30),
+                          onTap: _busy || _connected ? null : _chooseServer,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 7),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: _fa ? 'علاقه‌مندی' : 'Favorite',
+                                  onPressed: selected == null
+                                      ? null
+                                      : _toggleSelectedFavorite,
+                                  icon: Icon(
+                                    _selectedFavorite
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
+                                    color: _selectedFavorite
+                                        ? const Color(0xFFFFC83D)
+                                        : const Color(0xFF777680),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 2),
+                                Expanded(
+                                  child: Text(
+                                    selectedName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: Color(0xFFE9E8EE),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(_flag(selected?.countryCode),
+                                    style: const TextStyle(fontSize: 22)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_connected) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _ConnectionMetric(
+                              label: _fa ? 'دریافت' : 'Download',
+                              value: _formatRate(_downloadSpeed),
+                              icon: Icons.south_rounded,
+                            ),
+                            _ConnectionMetric(
+                              label: _fa ? 'ارسال' : 'Upload',
+                              value: _formatRate(_uploadSpeed),
+                              icon: Icons.north_rounded,
+                            ),
+                            _ConnectionMetric(
+                              label: _fa ? 'پینگ' : 'Ping',
+                              value: _pingMs == null ? '—' : '$_pingMs ms',
+                              icon: Icons.speed_rounded,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (_message != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF30202A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF754052)),
+                    ),
+                    child: Text(
+                      _message!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Color(0xFFFFC5D0), fontSize: 11, height: 1.4),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _metricDivider() => Container(width: 1, height: 34, color: const Color(0xFF293A59));
 
