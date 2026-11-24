@@ -49,6 +49,36 @@ This log records verified repository changes and test evidence. A GitHub commit 
 - JumpJump Flutter assets include its own logo/status/server/VIP/empty-state artwork and Lottie loading/network assets. These are reference evidence only; do not copy JumpJump branding or third-party ad creatives into NOVA.
 - No NOVA UI code was changed as part of this reference audit. Next: map the observed UI into NOVA widgets while preserving current VPN service, API, storage, and failover logic; verify actual functionality before presenting any control as working.
 
+## JumpJump-informed UI implementation — feature branch
+
+Working branch: `ui/jumpjump-reference` (kept separate from `main` pending validation).
+
+Verified code changes:
+- `f9f85e4ecbeb0c3955f2c165e121bfbe90652ae1`: persist favorite server IDs and a bounded, newest-first recent-server list.
+- `6fb59a534bde7119745866115fe304f68744b4e6`: rebuild the location picker with Locations/Favorites/Recent tabs, expandable countries, individual server rows and favorite controls.
+- `8b8cd812cc061c2c981f1f44a5c6b312ae5c2b37`: fix server-row title fallback.
+- `37816c08c9eb80ab657d99cb66047843bb35b2e5`: rebuild home layout with a horizontal power capsule, server-selection overlay, ad-slot placeholder, connected metrics and a distinct connection-progress view.
+- `95691bdb61157ca24ac84bcbceabdfc0497c0e8b`: add connection-cancel handling and remove unused helpers.
+- `ff416dd6085db346c1bfa24f91add2a5c9e0ab64`: retain displayed upload/download byte totals.
+- `1d09bcd865edf054d1c369f9e482ba7099c6b64`: restyle settings; unfinished capabilities are visibly marked as unavailable/coming soon rather than presented as working.
+- `1c5af90e5485526b4b0b641b8e3d52bf088e98e8`: add persistence tests for favorite add/remove and recent ordering/limit.
+
+Engine boundary: no changes were made to `VpnService`, `flutter_v2ray_client`, Xray TUN integration, API profile delivery, or failover logic.
+
+CI evidence:
+- Run #96 (`45441014948`) failed only at analysis because the new layout stopped displaying `_uploadedBytes` and `_downloadedBytes`; the exact warning lines were inspected.
+- Run #97 (`45441605606`) and run #98 (`45441975162`) were cancelled by the workflow's cancel-in-progress policy when newer commits arrived; they are not test failures.
+- Run #99 (`45442033543`) targets commit `1c5af90e5485526b4b0b641b8e3d52bf088e98e8`. Dart formatting and analyzer have passed; Flutter tests have passed; backend tests have passed. Android debug APK build and upload were still in progress at the time of this update.
+- The prior successful baseline APK remains run #91; it does not include this feature-branch UI.
+
+Implementation limitations:
+- The ad area is only a placeholder; no ad SDK/provider is integrated.
+- Premium/account flows, network mode, split tunneling, reset and network diagnosis are not implemented. Settings rows are marked unavailable rather than made into inert controls.
+- VIP markers are not shown because the current server API/model has no verified VIP field.
+- No public IP is shown because no verified public-IP source is exposed in the current client.
+- Favorites and Recent storage are implemented, but exact reference-app tab contents/empty states were not established by the video.
+- No physical-device install or live tunnel traffic test has been performed.
+
 ## Explicitly not verified
 
 - A successful CI debug APK artifact has been downloaded and verified for archive integrity. It has not yet been installed or tested on a physical device.
