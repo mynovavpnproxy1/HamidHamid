@@ -128,6 +128,8 @@ class _ServerListScreenState extends State<ServerListScreen> {
 
   Widget _serverRow(VpnServer server, {String? title}) {
     final favorite = _favoriteIds.contains(server.id);
+    final rowTitle = title ??
+        (server.name.trim().isNotEmpty ? server.name : _locationName(server));
     return InkWell(
       onTap: () => _select(server),
       child: Container(
@@ -155,9 +157,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title ?? server.name.trim().isNotEmpty
-                    ? (title ?? server.name)
-                    : _locationName(server),
+                rowTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: _fa ? TextAlign.right : TextAlign.left,
