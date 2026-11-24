@@ -162,7 +162,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
               onPressed: () => _toggleFavorite(server),
               icon: Icon(
                 favorite ? Icons.star_rounded : Icons.star_border_rounded,
-                color: favorite ? const Color(0xFFFFC83D) : const Color(0xFF55545D),
+                color: favorite ? const Color(0xFFFFC83D) : const Color(0xFF9DAFCB),
                 size: 21,
               ),
             ),
