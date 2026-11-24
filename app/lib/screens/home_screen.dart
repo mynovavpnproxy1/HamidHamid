@@ -126,17 +126,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(2)} MB/s';
   }
 
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
-
   @override
   void dispose() {
     _statusSubscription?.cancel();
@@ -416,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildConnectingPage() {
     final selected = _activeServer;
     final progress = _attemptCount > 0
-        ? (_currentAttempt / _attemptCount).clamp(0.0, 1.0)
+        ? (_currentAttempt / _attemptCount).clamp(0.0, 1.0).toDouble()
         : null;
     return Scaffold(
       backgroundColor: const Color(0xFF0B0A10),
@@ -844,34 +833,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _metricDivider() => Container(width: 1, height: 34, color: const Color(0xFF293A59));
-
-  Widget _trafficTile(String label, String value, IconData icon) => Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: const Color(0xFF101A2D),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFF202F4C)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color(0xFF69A0FF), size: 18),
-            const SizedBox(width: 9),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Color(0xFF8295B7), fontSize: 10)),
-                const SizedBox(height: 4),
-                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-              ],
-            )),
-          ],
-        ),
-      );
-
 }
 
-
+class _ConnectionCancelledException implements Exception {
+  const _ConnectionCancelledException();
+}
 class _ConnectionMetric extends StatelessWidget {
   const _ConnectionMetric({
     required this.label,
