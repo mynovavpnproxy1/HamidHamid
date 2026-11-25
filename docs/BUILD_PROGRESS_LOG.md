@@ -66,3 +66,15 @@ This log records verified repository changes and test evidence. A GitHub commit 
 4. Run CI after each coherent UI milestone and verify the artifact before claiming a build.
 5. Install the debug APK on an Android device and test with an authorized working profile; verify TCP, DNS, IPv4/IPv6, UDP, upload/download, and disconnect behavior.
 6. Record measured results and only then assess release readiness.
+
+
+## Native protector hardening — 2026-11-25
+
+- Static review of the exact pinned plugin revision found a fail-open callback: `V2rayCoreManager.setUpListener()` returned `true` when the Android service/protector listener was missing.
+- Patched the owned fork `mynovavpnproxy1/flutter_v2ray_client`:
+  - Commit `39df80d6fb14e25110e580aaebf3654d4ca0b07e`: added `SocketProtection.isProtected()`, rejecting a missing listener and invalid descriptor range, and returning false on callback exceptions.
+  - Commit `a7a2b0cee91b8d94ed2151083d3dc25564b2b1b5`: added JUnit tests for missing listener, protect success/failure, callback exception, and invalid descriptors.
+  - Commit `d50467c1510edf740cae80d4556e3c4512cd4354`: wired the native `Libv2ray.useProtector` callback to the fail-closed helper. The final manager source was fetched again and verified.
+- Updated `app/pubspec.yaml` to pin the fork to `d50467c1510edf740cae80d4556e3c4512cd4354`; the file was fetched again and the pin verified. App dependency update commit: `061e1b3af2041daf59371ade522b2a77a2c3a22e`.
+- **Not yet verified:** Android/Gradle compilation, JUnit execution, Flutter analysis/tests, or APK build after this change. Do not treat source-level tests as executed tests.
+- Other candidate issues remain open: core reports CONNECTED immediately after `startLoop` without an end-to-end TUN traffic probe; bypass-subnet route construction appears inverted; IPv6 is sinkholed rather than tunneled; native AAR provenance and redistribution notices are unresolved. See the engine research audit in the Hamid documentation repository.
