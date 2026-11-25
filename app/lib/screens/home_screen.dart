@@ -66,12 +66,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _downloadedBytes = status.download;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
-          // Native core startup is not proof of working TUN traffic.
-          // VpnService.connect() verifies an HTTPS request before this screen
-          // transitions to the connected state.
-          _connection = _ConnectionUi.connecting;
+          // Native CONNECTED events continue arriving while the tunnel is up.
+          // Never demote a data-plane-verified session back to Connecting.
+          if (_connection != _ConnectionUi.connected) {
+            _connection = _ConnectionUi.connecting;
+            _message = _fa
+                ? 'در حال بررسی عبور ترافیک…'
+                : 'Verifying VPN traffic…';
+          }
           _duration = status.duration;
-          _message = _fa ? 'در حال بررسی عبور ترافیک…' : 'Verifying VPN traffic…';
           break;
         case 'CONNECTING':
           _connection = _ConnectionUi.connecting;
@@ -105,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Re-check a VPN session restored after app recreation. During a fresh
     // connection _busy is true, and VpnService.connect() owns that probe.
     if (status.state.toUpperCase() == 'CONNECTED' &&
+        _connection != _ConnectionUi.connected &&
         !_busy &&
         !_restoredVerificationRunning) {
       _restoredVerificationRunning = true;
