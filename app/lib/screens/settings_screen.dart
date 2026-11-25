@@ -108,55 +108,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _sectionTitle(_fa ? 'حساب کاربری' : 'Account'),
                 _settingsCard([
                   _comingSoonRow(
-                    icon: Icons.account_circle_outlined,
-                    title: _fa ? 'ورود / ثبت‌نام' : 'Sign in / Create account',
+                    icon: Icons.person_add_alt_1_rounded,
+                    title: _fa ? 'عضو شدن' : 'Join',
                     subtitle: _fa
-                        ? 'مدیریت حساب در حال توسعه است'
-                        : 'Account management is under development',
+                        ? 'ساخت و مدیریت حساب کاربری به‌زودی'
+                        : 'Account creation and management coming soon',
                   ),
                 ]),
-                _sectionTitle(_fa ? 'تبلیغات' : 'Advertising'),
+                _sectionTitle(_fa ? 'تبلیغات و اشتراک' : 'Ads & subscription'),
                 _settingsCard([
                   _comingSoonRow(
-                    icon: Icons.campaign_outlined,
-                    title: _fa ? 'نمایش تبلیغات بنری' : 'Banner ads',
+                    icon: Icons.block_rounded,
+                    title: _fa ? 'حذف تبلیغات' : 'Remove ads',
                     subtitle: _fa
-                        ? 'تنظیمات پس از اتصال ارائه‌دهنده تبلیغات فعال می‌شود'
-                        : 'Controls will be available after an ad provider is integrated',
+                        ? 'با تهیه اشتراک پرو، تبلیغات حذف می‌شود'
+                        : 'Ads will be removed with a Pro subscription',
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2B2933)),
+                  _comingSoonRow(
+                    icon: Icons.workspace_premium_rounded,
+                    title: _fa ? 'خرید اشتراک پرو' : 'Buy Pro subscription',
+                    subtitle: _fa
+                        ? 'دسترسی به امکانات ویژه؛ پرداخت به‌زودی فعال می‌شود'
+                        : 'Unlock premium features; payments coming soon',
                   ),
                 ]),
                 _sectionTitle(_fa ? 'شبکه' : 'Network'),
                 _settingsCard([
                   _comingSoonRow(
-                    icon: Icons.route_outlined,
-                    title: _fa ? 'حالت مسیریابی هوشمند' : 'Smart routing mode',
-                    subtitle: _fa
-                        ? 'هنوز در موتور فعلی پیاده‌سازی نشده است'
-                        : 'Not implemented in the current engine integration',
-                  ),
-                  const Divider(height: 1, color: Color(0xFF2B2933)),
-                  _comingSoonRow(
                     icon: Icons.call_split_rounded,
-                    title: _fa ? 'تقسیم تونل' : 'Split tunneling',
+                    title: _fa ? 'تونل برنامه‌های گوشی' : 'Per-app VPN',
                     subtitle: _fa
-                        ? 'انتخاب برنامه‌های عبوری از VPN بعداً اضافه می‌شود'
-                        : 'Per-app VPN routing will be added later',
-                  ),
-                  const Divider(height: 1, color: Color(0xFF2B2933)),
-                  _comingSoonRow(
-                    icon: Icons.restart_alt_rounded,
-                    title: _fa ? 'بازنشانی تنظیمات' : 'Restore defaults',
-                    subtitle: _fa
-                        ? 'در نسخه فعلی تنظیم قابل بازنشانی دیگری وجود ندارد'
-                        : 'There are no additional configurable settings to reset yet',
-                  ),
-                  const Divider(height: 1, color: Color(0xFF2B2933)),
-                  _comingSoonRow(
-                    icon: Icons.network_check_rounded,
-                    title: _fa ? 'تشخیص شبکه' : 'Network diagnosis',
-                    subtitle: _fa
-                        ? 'آزمایش‌های شبکه هنوز اضافه نشده‌اند'
-                        : 'Network diagnostics are not available yet',
+                        ? 'انتخاب برنامه‌هایی که از VPN استفاده می‌کنند'
+                        : 'Choose which phone apps use the VPN',
                   ),
                 ]),
                 _sectionTitle(_fa ? 'برنامه' : 'Application'),
