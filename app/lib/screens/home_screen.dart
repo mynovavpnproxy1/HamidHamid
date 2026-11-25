@@ -78,7 +78,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         case 'CONNECTED':
           // Native CONNECTED is not enough: the service-level HTTPS probe
           // must finish before the UI reports a working VPN session.
-          if (_connection != _ConnectionUi.connected) {
+          if (_connection != _ConnectionUi.connected &&
+              _connection != _ConnectionUi.disconnecting) {
             _connection = _ConnectionUi.connecting;
             _message = _fa
                 ? 'در حال بررسی عبور ترافیک…'
