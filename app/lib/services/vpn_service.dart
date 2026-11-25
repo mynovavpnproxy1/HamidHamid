@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
 
 /// رابط اپ با موتور VPN اندروید.
-/// موفقیت اتصال فقط پس از دریافت وضعیت واقعی CONNECTED اعلام می‌شود.
+/// وضعیت موتور از callback بومی خوانده می‌شود؛ این رویداد به‌تنهایی عبور ترافیک TUN را ثابت نمی‌کند.
 class VpnService {
   VpnService._() : _engine = V2ray(onStatusChanged: _publishStatus);
 
@@ -96,7 +96,7 @@ class VpnService {
 
   V2RayStatus get currentStatus => _latestStatus;
 
-  /// Measures HTTPS response latency through the active VPN tunnel.
+  /// Measures the native core's outbound delay; this is not an end-to-end TUN traffic test.
   Future<int> getConnectedServerDelay() =>
       _engine.getConnectedServerDelay();
 
