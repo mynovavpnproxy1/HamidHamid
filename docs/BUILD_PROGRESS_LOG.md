@@ -78,3 +78,7 @@ This log records verified repository changes and test evidence. A GitHub commit 
 - Updated `app/pubspec.yaml` to pin the fork to `d50467c1510edf740cae80d4556e3c4512cd4354`; the file was fetched again and the pin verified. App dependency update commit: `061e1b3af2041daf59371ade522b2a77a2c3a22e`.
 - **Not yet verified:** Android/Gradle compilation, JUnit execution, Flutter analysis/tests, or APK build after this change. Do not treat source-level tests as executed tests.
 - Other candidate issues remain open: core reports CONNECTED immediately after `startLoop` without an end-to-end TUN traffic probe; bypass-subnet API naming conflicts with include-route behavior and needs an explicit contract; this is not a confirmed routing defect; IPv6 is sinkholed rather than tunneled; native AAR provenance and redistribution notices are unresolved. See the engine research audit in the Hamid documentation repository.
+
+
+### Native status semantics clarification — 2026-11-25
+Updated `app/lib/services/vpn_service.dart` comments to distinguish the native core's CONNECTED callback from proof of end-to-end TUN traffic. The delay method is documented as the native core's outbound delay check, not a data-plane test of ordinary app traffic through the TUN. This is a documentation correction; it does not change connection runtime behavior.
