@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   static const _serverKey = 'nova.selected_server';
   static const _languageKey = 'nova.language';
+  static const _lightThemeKey = 'nova.light_theme';
   static const _favoriteServersKey = 'nova.favorite_servers';
   static const _recentServersKey = 'nova.recent_servers';
 
@@ -17,6 +18,12 @@ class StorageService {
 
   Future<void> writeLanguage(String language) async =>
       (await SharedPreferences.getInstance()).setString(_languageKey, language);
+
+  Future<bool> readLightTheme() async =>
+      (await SharedPreferences.getInstance()).getBool(_lightThemeKey) ?? false;
+
+  Future<void> writeLightTheme(bool enabled) async =>
+      (await SharedPreferences.getInstance()).setBool(_lightThemeKey, enabled);
 
   Future<List<String>> readFavoriteServerIds() async =>
       (await SharedPreferences.getInstance())
