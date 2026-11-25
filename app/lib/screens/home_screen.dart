@@ -616,9 +616,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('NOVA VPN',
+                        Text('NOVA VPN',
                             style: TextStyle(
-                                color: _lightTheme ? Color(0xFF20334D) : Color(0xFFF0F4FF),
+                                color: _lightTheme ? const Color(0xFF20334D) : const Color(0xFFF0F4FF),
                                 fontSize: 23,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.2)),
