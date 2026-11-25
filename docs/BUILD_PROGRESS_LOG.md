@@ -82,3 +82,6 @@ This log records verified repository changes and test evidence. A GitHub commit 
 
 ### Native status semantics clarification — 2026-11-25
 Updated `app/lib/services/vpn_service.dart` comments to distinguish the native core's CONNECTED callback from proof of end-to-end TUN traffic. The delay method is documented as the native core's outbound delay check, not a data-plane test of ordinary app traffic through the TUN. This is a documentation correction; it does not change connection runtime behavior.
+
+### Native AAR license-chain review — 2026-11-25
+Reviewed the upstream AndroidLibXrayLite source/API lineage: its LICENSE declares LGPL-3.0; its go.mod references Xray-core, whose repository LICENSE is MPL-2.0. The plugin's top-level MIT license does not settle native AAR redistribution terms. Exact AAR source/build provenance and complete notices remain unverified. The current engine dependency is not yet cleared for distribution; legal review and provenance verification remain open.
