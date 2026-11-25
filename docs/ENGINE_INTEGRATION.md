@@ -26,3 +26,9 @@ The plugin's `CONNECTED` callback is currently emitted after the native `startLo
 ## Native AAR license-chain review
 
 The plugin repository has a top-level MIT license, but that does not settle the terms for the bundled native AAR. The upstream AndroidLibXrayLite source/API lineage declares LGPL-3.0 and its inspected dependency manifest references Xray-core, whose repository license is MPL-2.0. The exact AAR source commit/build provenance and complete dependency notices are not established in the candidate repository. Do not treat the native engine as cleared for redistribution in a closed-source/ad-supported APK until provenance is verified and LGPL/MPL obligations receive legal review.
+
+## Integration state — 2026-11-25
+
+The Xray plugin is already integrated at source level; it does not need to be copied into the app again. `app/pubspec.yaml` pins the owned fork at `89fdab138073333eb0eaf03ac2e16dbde874be1c`. `VpnService` owns initialization, permission, profile conversion, connect/disconnect, and native status stream; `HomeScreen` consumes that stream. CI generates the Android Gradle project under `app/android` when absent and now includes the plugin's JUnit test task before APK packaging.
+
+The latest Gradle dependency-layout correction and app pin are committed, but no CI run after those commits has been verified. Do not claim the latest plugin compiles, its unit tests pass, or the APK builds until a successful workflow artifact is inspected. A native `CONNECTED` event remains only a core-start signal, not proof of tunneled internet traffic.
