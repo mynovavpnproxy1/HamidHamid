@@ -12,6 +12,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _storage = StorageService();
   String _language = 'fa';
+  bool _lightTheme = false;
 
   bool get _fa => _language == 'fa';
 
@@ -20,6 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _storage.readLanguage().then((value) {
       if (mounted) setState(() => _language = value);
+    });
+    _storage.readLightTheme().then((value) {
+      if (mounted) setState(() => _lightTheme = value);
     });
   }
 
@@ -37,9 +41,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _settingsCard(List<Widget> children) => Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF191820),
+          color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF191820),
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: const Color(0xFF2B2933)),
+          border: Border.all(color: _lightTheme ? const Color(0xFFD8E3F0) : const Color(0xFF2B2933)),
         ),
         child: Column(children: children),
       );
@@ -55,18 +59,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(
           title,
           style: const TextStyle(
-              color: Color(0xFFB4B2BD), fontSize: 13, fontWeight: FontWeight.w600),
+              color: _lightTheme ? Color(0xFF314762) : Color(0xFFB4B2BD), fontSize: 13, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Color(0xFF777580), fontSize: 10),
+          style: TextStyle(color: _lightTheme ? const Color(0xFF71839B) : const Color(0xFF777580), fontSize: 10),
         ),
         trailing: Text(
           _fa ? 'به‌زودی' : 'Soon',
-          style: const TextStyle(color: Color(0xFF66646F), fontSize: 9),
+          style: TextStyle(color: _lightTheme ? const Color(0xFF8192A8) : const Color(0xFF66646F), fontSize: 9),
         ),
         dense: true,
       );
+
+  Future<void> _changeTheme(bool value) async {
+    await _storage.writeLightTheme(value);
+    if (mounted) setState(() => _lightTheme = value);
+  }
 
   Future<void> _changeLanguage(String? value) async {
     if (value == null) return;
@@ -78,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-          backgroundColor: const Color(0xFF100F15),
+          backgroundColor: _lightTheme ? const Color(0xFFF2F6FC) : const Color(0xFF100F15),
           body: SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(17, 10, 17, 24),
@@ -101,8 +110,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(width: 9),
-                    const Icon(Icons.tune_rounded,
-                        color: Color(0xFFE0DFE6), size: 20),
+                    Icon(Icons.tune_rounded,
+                        color: _lightTheme ? const Color(0xFF49688F) : const Color(0xFFE0DFE6), size: 20),
                   ],
                 ),
                 _sectionTitle(_fa ? 'حساب کاربری' : 'Account'),
@@ -126,6 +135,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : 'Choose which phone apps use the VPN',
                   ),
                 ]),
+                _sectionTitle(_fa ? 'نمایش' : 'Appearance'),
+                _settingsCard([
+                  SwitchListTile(
+                    secondary: Icon(
+                      _lightTheme ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                      color: const Color(0xFF4D91FF),
+                      size: 20,
+                    ),
+                    title: Text(
+                      _fa ? 'حالت روشن' : 'Light theme',
+                      style: TextStyle(
+                        color: _lightTheme ? const Color(0xFF263B59) : const Color(0xFFE0DFE7),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _fa ? 'با خاموش کردن، حالت تیره فعال می‌شود' : 'Turn off to use the dark theme',
+                      style: TextStyle(
+                        color: _lightTheme ? const Color(0xFF71839B) : const Color(0xFF9A98A5),
+                        fontSize: 10,
+                      ),
+                    ),
+                    value: _lightTheme,
+                    activeColor: const Color(0xFF2878E8),
+                    onChanged: _changeTheme,
+                    dense: true,
+                  ),
+                ]),
                 _sectionTitle(_fa ? 'برنامه' : 'Application'),
                 _settingsCard([
                   ListTile(
@@ -134,16 +172,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: Text(
                       _fa ? 'زبان' : 'Language',
                       style: const TextStyle(
-                          color: Color(0xFFE0DFE7),
+                          color: _lightTheme ? Color(0xFF263B59) : Color(0xFFE0DFE7),
                           fontSize: 13,
                           fontWeight: FontWeight.w700),
                     ),
                     trailing: DropdownButton<String>(
                       value: _language,
-                      dropdownColor: const Color(0xFF24222B),
+                      dropdownColor: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF24222B),
                       underline: const SizedBox.shrink(),
                       style: const TextStyle(
-                          color: Color(0xFFE0DFE7), fontSize: 12),
+                          color: _lightTheme ? Color(0xFF263B59) : Color(0xFFE0DFE7), fontSize: 12),
                       items: const [
                         DropdownMenuItem(value: 'fa', child: Text('فارسی')),
                         DropdownMenuItem(value: 'en', child: Text('English')),
@@ -240,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Text(
                     'NOVA VPN',
                     style: TextStyle(
-                      color: const Color(0xFF777580).withValues(alpha: .65),
+                      color: (_lightTheme ? const Color(0xFF617B9D) : const Color(0xFF777580)).withValues(alpha: .8),
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.4,
