@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from urllib.parse import quote
 
 import httpx
@@ -26,6 +27,7 @@ class VoxClient:
     def __init__(self, api_key: str | None = None, *, http_client=None):
         self.api_key = api_key
         self.http_client = http_client
+        self._locations_cache: dict[str, tuple[float, dict]] = {}
 
     def _request(self, method: str, path: str, *, params=None, json_body=None) -> dict:
         api_key = self.api_key if self.api_key is not None else os.getenv("VOX_API_KEY", "")
@@ -95,11 +97,17 @@ class VoxClient:
         return user
 
     def locations(self, protocol: str = "vless") -> dict:
+        cached = self._locations_cache.get(protocol)
+        now = time.monotonic()
+        if cached is not None and now - cached[0] < 3600:
+            return cached[1]
         payload = self._request("GET", "/locations", params={"protocol": protocol})
         locations = payload.get("locations")
         if not isinstance(locations, list):
             raise HTTPException(status_code=502, detail="Vox API returned an invalid locations list")
-        return {"locations": locations}
+        result = {"locations": locations}
+        self._locations_cache[protocol] = (now, result)
+        return result
 
     def config(self, external_id: str, location: str, protocol: str, device: int = 1) -> dict:
         self.ensure_user(external_id)
