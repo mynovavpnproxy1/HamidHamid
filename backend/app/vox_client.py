@@ -129,7 +129,7 @@ def install_vox_routes(app, *, require_client):
         location: str = Query(min_length=1, max_length=64),
         protocol: str = Query(default="vless", pattern="^(vless)$"),
         device: int = Query(default=1, ge=1, le=2),
-        response: Response = None,
+        response: Response,
         claims: dict = Depends(require_client),
     ) -> dict:
         if not LOCATION_PATTERN.fullmatch(location):
