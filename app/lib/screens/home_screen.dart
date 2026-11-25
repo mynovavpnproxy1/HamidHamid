@@ -37,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _uploadedBytes = 0;
   int _downloadedBytes = 0;
   int? _pingMs;
-  bool _pingAttempted = false;
   String? _message;
   bool _busy = false;
   bool _failoverRunning = false;
@@ -89,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _uploadedBytes = 0;
             _downloadedBytes = 0;
             _pingMs = null;
-            _pingAttempted = false;
             _activeServer = null;
           }
           break;
@@ -121,7 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _connection = _ConnectionUi.connected;
         _message = null;
-        _pingAttempted = true;
       });
       unawaited(_refreshConnectedPing());
     } catch (_) {
@@ -338,7 +335,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _preferredServer = connectedServer;
           _connection = _ConnectionUi.connected;
           _message = null;
-          _pingAttempted = true;
         });
         unawaited(_refreshConnectedPing());
       }
