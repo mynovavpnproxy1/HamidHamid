@@ -41,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _message;
   bool _busy = false;
   bool _failoverRunning = false;
+  bool _restoredVerificationRunning = false;
   int _currentAttempt = 0;
   int _attemptCount = 0;
 
@@ -102,6 +103,44 @@ class _HomeScreenState extends State<HomeScreen> {
           break;
       }
     });
+
+    // Re-check a VPN session restored after app recreation. During a fresh
+    // connection _busy is true, and VpnService.connect() owns that probe.
+    if (status.state.toUpperCase() == 'CONNECTED' &&
+        !_busy &&
+        !_restoredVerificationRunning) {
+      _restoredVerificationRunning = true;
+      unawaited(_verifyRestoredConnection());
+    }
+  }
+
+  Future<void> _verifyRestoredConnection() async {
+    try {
+      await _vpn.verifyActiveDataPlane();
+      if (!mounted || _busy) return;
+      setState(() {
+        _connection = _ConnectionUi.connected;
+        _message = null;
+        _pingAttempted = true;
+      });
+      unawaited(_refreshConnectedPing());
+    } catch (_) {
+      try {
+        await _vpn.disconnect();
+      } catch (_) {
+        // Keep the UI in an error state even if shutdown also fails.
+      }
+      if (mounted) {
+        setState(() {
+          _connection = _ConnectionUi.error;
+          _message = _fa
+              ? 'ترافیک تونل تأیید نشد؛ اتصال قطع شد.'
+              : 'VPN traffic could not be verified; connection was stopped.';
+        });
+      }
+    } finally {
+      _restoredVerificationRunning = false;
+    }
   }
 
   Future<void> _refreshConnectedPing() async {
