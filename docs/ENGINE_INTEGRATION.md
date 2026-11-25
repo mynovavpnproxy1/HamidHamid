@@ -22,3 +22,7 @@ This patch does **not** prove successful tunnel traffic and does not fix the can
 ## Native status and data-plane distinction
 
 The plugin's `CONNECTED` callback is currently emitted after the native `startLoop()` call returns and the manager sets its internal state. It confirms native core startup, not end-to-end TUN traffic. The exposed server-delay method calls the core's outbound delay measurement; it is useful as a server-reachability signal but is not proof that arbitrary Android app packets traverse the TUN. A dedicated data-plane probe and physical-device traffic tests are still required.
+
+## Native AAR license-chain review
+
+The plugin repository has a top-level MIT license, but that does not settle the terms for the bundled native AAR. The upstream AndroidLibXrayLite source/API lineage declares LGPL-3.0 and its inspected dependency manifest references Xray-core, whose repository license is MPL-2.0. The exact AAR source commit/build provenance and complete dependency notices are not established in the candidate repository. Do not treat the native engine as cleared for redistribution in a closed-source/ad-supported APK until provenance is verified and LGPL/MPL obligations receive legal review.
