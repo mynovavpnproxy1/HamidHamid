@@ -58,8 +58,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         leading: Icon(icon, color: const Color(0xFF777580), size: 20),
         title: Text(
           title,
-          style: const TextStyle(
-              color: _lightTheme ? Color(0xFF314762) : Color(0xFFB4B2BD), fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _lightTheme ? const Color(0xFF314762) : const Color(0xFFB4B2BD), fontSize: 13, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           subtitle,
@@ -171,8 +171,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Color(0xFF7EA6FF), size: 20),
                     title: Text(
                       _fa ? 'زبان' : 'Language',
-                      style: const TextStyle(
-                          color: _lightTheme ? Color(0xFF263B59) : Color(0xFFE0DFE7),
+                      style: TextStyle(
+                          color: _lightTheme ? const Color(0xFF263B59) : const Color(0xFFE0DFE7),
                           fontSize: 13,
                           fontWeight: FontWeight.w700),
                     ),
@@ -180,8 +180,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: _language,
                       dropdownColor: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF24222B),
                       underline: const SizedBox.shrink(),
-                      style: const TextStyle(
-                          color: _lightTheme ? Color(0xFF263B59) : Color(0xFFE0DFE7), fontSize: 12),
+                      style: TextStyle(
+                          color: _lightTheme ? const Color(0xFF263B59) : const Color(0xFFE0DFE7), fontSize: 12),
                       items: const [
                         DropdownMenuItem(value: 'fa', child: Text('فارسی')),
                         DropdownMenuItem(value: 'en', child: Text('English')),
