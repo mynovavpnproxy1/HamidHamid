@@ -125,13 +125,13 @@ class ApiService {
   }
 
   Future<List<VpnServer>> fetchVoxServers() async {
-    final response = await _authorizedGet('/api/v1/vox/locations?protocol=vless');
-    if (response.statusCode == 403) {
-      throw const ApiException(
-        'This device is awaiting administrator approval.',
-        statusCode: 403,
-      );
-    }
+    // Location metadata is non-sensitive and can be shown before device approval.
+    final response = await _client
+        .get(
+          _uri('/api/v1/vox/locations?protocol=vless'),
+          headers: const {'Cache-Control': 'no-store'},
+        )
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw ApiException(
         'Vox locations unavailable (${response.statusCode}).',
