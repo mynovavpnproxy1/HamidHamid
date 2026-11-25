@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   VpnServer? _activeServer;
   VpnServer? _preferredServer;
   String _language = 'fa';
+  bool _lightTheme = false;
   String _duration = '00:00:00';
   int _uploadSpeed = 0;
   int _downloadSpeed = 0;
@@ -57,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     )..repeat(reverse: true);
     _storage.readLanguage().then((language) {
       if (mounted) setState(() => _language = language);
+    });
+    _storage.readLightTheme().then((enabled) {
+      if (mounted) setState(() => _lightTheme = enabled);
     });
     _statusSubscription = _vpn.statusChanges.listen(_onEngineStatus);
     _onEngineStatus(_vpn.currentStatus);
@@ -577,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Directionality(
       textDirection: _fa ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0B0A10),
+        backgroundColor: _lightTheme ? const Color(0xFFF2F6FC) : const Color(0xFF0B0A10),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
@@ -593,7 +597,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               builder: (_) => const SettingsScreen()),
                         );
                         final language = await _storage.readLanguage();
-                        if (mounted) setState(() => _language = language);
+                        final lightTheme = await _storage.readLightTheme();
+                        if (mounted) {
+                          setState(() {
+                            _language = language;
+                            _lightTheme = lightTheme;
+                          });
+                        }
                       },
                       icon: const Icon(Icons.tune_rounded,
                           color: Color(0xFFB9C9E4), size: 25),
@@ -662,9 +672,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       onTap: _busy ? null : _toggleConnection,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 260),
-                        width: 222,
-                        height: 76,
-                        padding: const EdgeInsets.all(6),
+                        width: 184,
+                        height: 68,
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(48),
                           color: _connected ? null : const Color(0xFF101D32),
@@ -695,11 +705,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
                           child: Container(
-                            width: 64,
-                            height: 64,
+                            width: 58,
+                            height: 58,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFFECEBF0),
+                              color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFFECEBF0),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: .22),
@@ -726,8 +736,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       : _stateLabel,
                   style: TextStyle(
                     color: _connected
-                        ? const Color(0xFF4BD7A0)
-                        : const Color(0xFFB8B6C1),
+                        ? const Color(0xFF159B70)
+                        : (_lightTheme ? const Color(0xFF263B59) : const Color(0xFFB8B6C1)),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -738,9 +748,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 92),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14131A),
+                      color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF14131A),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFF24232C)),
+                      border: Border.all(color: _lightTheme ? const Color(0xFFD5E0EF) : const Color(0xFF24232C)),
                     ),
                     child: Center(
                       child: Text(
@@ -818,7 +828,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                        color: Color(0xFFE9E8EE),
+                                        color: _lightTheme ? Color(0xFF243650) : Color(0xFFE9E8EE),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700),
                                   ),
