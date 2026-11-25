@@ -115,24 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : 'Account creation and management coming soon',
                   ),
                 ]),
-                _sectionTitle(_fa ? 'تبلیغات و اشتراک' : 'Ads & subscription'),
-                _settingsCard([
-                  _comingSoonRow(
-                    icon: Icons.block_rounded,
-                    title: _fa ? 'حذف تبلیغات' : 'Remove ads',
-                    subtitle: _fa
-                        ? 'با تهیه اشتراک پرو، تبلیغات حذف می‌شود'
-                        : 'Ads will be removed with a Pro subscription',
-                  ),
-                  const Divider(height: 1, color: Color(0xFF2B2933)),
-                  _comingSoonRow(
-                    icon: Icons.workspace_premium_rounded,
-                    title: _fa ? 'خرید اشتراک پرو' : 'Buy Pro subscription',
-                    subtitle: _fa
-                        ? 'دسترسی به امکانات ویژه؛ پرداخت به‌زودی فعال می‌شود'
-                        : 'Unlock premium features; payments coming soon',
-                  ),
-                ]),
+
                 _sectionTitle(_fa ? 'شبکه' : 'Network'),
                 _settingsCard([
                   _comingSoonRow(
