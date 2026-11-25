@@ -121,9 +121,8 @@ def install_vox_routes(app, *, require_client):
     @router.get("/api/v1/vox/locations")
     def list_vox_locations(
         protocol: str = Query(default="vless", pattern="^(vless)$"),
-        _: dict = Depends(require_client),
     ) -> dict:
-        # The currently pinned NOVA Android engine is Xray-based; expose VLESS only.
+        # Location metadata is public; private user configs remain authenticated.
         return vox.locations(protocol)
 
     @router.get("/api/v1/vox/config")
