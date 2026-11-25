@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset(
-                        'assets/brand/nova_logo_dark.jpg',
+                        'assets/brand/nova_logo_new.jpg',
                         width: 206,
                         height: 206,
                         fit: BoxFit.contain,

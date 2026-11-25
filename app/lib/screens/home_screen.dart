@@ -464,9 +464,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.public_rounded,
-                        size: 132, color: Color(0xFF4387FF)),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/brand/nova_logo_new.jpg',
+                      width: 206,
+                      height: 206,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -633,7 +637,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Image.asset(
-                        'assets/brand/nova_logo_dark.jpg',
+                        'assets/brand/nova_logo_new.jpg',
                         width: 52,
                         height: 52,
                         fit: BoxFit.cover,
