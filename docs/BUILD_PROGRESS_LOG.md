@@ -85,3 +85,6 @@ Updated `app/lib/services/vpn_service.dart` comments to distinguish the native c
 
 ### Native AAR license-chain review — 2026-11-25
 Reviewed the upstream AndroidLibXrayLite source/API lineage: its LICENSE declares LGPL-3.0; its go.mod references Xray-core, whose repository LICENSE is MPL-2.0. The plugin's top-level MIT license does not settle native AAR redistribution terms. Exact AAR source/build provenance and complete notices remain unverified. The current engine dependency is not yet cleared for distribution; legal review and provenance verification remain open.
+
+### Native plugin test gate added to CI — 2026-11-25
+Updated `.github/workflows/nova_ci.yml` to run `./gradlew :flutter_v2ray_client:testDebugUnitTest` after Flutter tests and before the Android APK build. This is intended to execute the new fail-closed socket-protection JUnit cases. The workflow file is committed and verified; the resulting CI run has not yet been observed, so test execution/build success remains pending.
