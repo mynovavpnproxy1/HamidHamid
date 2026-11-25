@@ -44,3 +44,12 @@ This is an initial IPv4/TCP-over-HTTPS reachability gate, not a complete leak or
 The Android job runs from the app directory, resolves Flutter dependencies there, and generates app/android only when absent. The plugin package name is flutter_v2ray_client, matching the Gradle test task :flutter_v2ray_client:testDebugUnitTest. Formatting is checked without mutating source files and includes both lib and test; the Flutter test runner is skipped only if no Dart test files exist. The APK artifact path is relative to the repository workspace and points to app/build/app/outputs/flutter-apk/app-debug.apk.
 
 Workflow commits f43291b3305183dc31391020f2a16a275cf32d76 and a2758b8a6fc9602c2dd4097c1f450a96d33f5eff are committed and the final workflow content was fetched again. GitHub Actions run status is not yet available through the current run lookup (which only returns pull-request-triggered runs); no build, JUnit, or APK success is claimed.
+
+## Vox partner integration — 2026-11-25
+
+- Added a server-side Vox API client in `backend/app/vox_client.py`; the partner key is read from the backend-only `VOX_API_KEY` environment variable and is never sent to the Android app.
+- Added public VLESS location metadata at `GET /api/v1/vox/locations` and protected fresh profile delivery at `GET /api/v1/vox/config`. The config endpoint requires an approved NOVA device token and returns `Cache-Control: no-store`.
+- Each NOVA installation identity maps to a deterministic Vox `external_id` (`nova_<device_id>`); Vox user creation is idempotent. The app now merges Vox VLESS locations into its server picker and fetches a fresh profile immediately before each connection attempt.
+- This first phase exposes **VLESS + Reality only** because the currently pinned Android engine is Xray-based. WireGuard and AmneziaWG are not yet wired into the Android data plane and must not be advertised as working.
+- The partner API key has not yet been configured in the hosting environment, and no live Vox user/config has been created or fetched. CI for the integration is pending; no build, real connection, or traffic-throughput result is claimed.
+- Relevant commits in `HamidHamid`: backend client `952628a4609edaca73c5253e07e0a3f797650a3b`; route wiring `7b4708bf19af31d42b19e2091ab69bed44e47633`; app integration `698ff5a5bc3376477388e3dace4be8a08500db04`; latest app test `b7ff9bed96d61662bcbfa07bf548d3f47930f429`.
