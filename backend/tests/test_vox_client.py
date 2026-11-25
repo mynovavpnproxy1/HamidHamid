@@ -86,13 +86,10 @@ def test_vox_locations_and_fresh_vless_config_are_server_side_and_authenticated(
 
 
 def test_vox_routes_require_approved_client_and_secret(client, monkeypatch):
-    assert client.get("/api/v1/vox/locations").status_code == 401
+    assert client.get("/api/v1/vox/config?location=de-frankfurt").status_code == 401
     token = _approved_client_token(client, "d" * 64)
     monkeypatch.delenv("VOX_API_KEY", raising=False)
-    response = client.get(
-        "/api/v1/vox/locations",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    response = client.get("/api/v1/vox/locations")
     assert response.status_code == 503
     assert response.json()["detail"] == "Vox integration is not configured"
 
