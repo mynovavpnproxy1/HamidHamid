@@ -24,17 +24,19 @@ class VoxClient:
     """Server-side Vox partner API client. Never log keys or returned configs."""
 
     def __init__(self, api_key: str | None = None, *, http_client=None):
-        self.api_key = (api_key if api_key is not None else os.getenv("VOX_API_KEY", "")).strip()
+        self.api_key = api_key
         self.http_client = http_client
 
     def _request(self, method: str, path: str, *, params=None, json_body=None) -> dict:
-        if not self.api_key:
+        api_key = self.api_key if self.api_key is not None else os.getenv("VOX_API_KEY", "")
+        api_key = api_key.strip()
+        if not api_key:
             raise HTTPException(
                 status_code=503,
                 detail="Vox integration is not configured",
             )
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
             "X-Vox-API-Version": "1.7.0",
         }
