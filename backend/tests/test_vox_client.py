@@ -89,9 +89,13 @@ def test_vox_routes_require_approved_client_and_secret(client, monkeypatch):
     assert client.get("/api/v1/vox/config?location=de-frankfurt").status_code == 401
     token = _approved_client_token(client, "d" * 64)
     monkeypatch.delenv("VOX_API_KEY", raising=False)
-    response = client.get("/api/v1/vox/locations")
-    assert response.status_code == 503
-    assert response.json()["detail"] == "Vox integration is not configured"
+    # Public location metadata may legitimately be served from the one-hour
+    # cache after the upstream key is removed. Verify a cache miss with a
+    # fresh client so this test is independent of other tests' cache state.
+    with pytest.raises(vox_client.HTTPException) as error:
+        vox_client.VoxClient().locations()
+    assert error.value.status_code == 503
+    assert error.value.detail == "Vox integration is not configured"
 
 
 def test_vox_protocol_route_does_not_expose_unintegrated_wireguard_or_amneziawg(client):
