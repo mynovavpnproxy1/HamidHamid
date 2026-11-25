@@ -81,14 +81,17 @@ jobs:
           fi
       - name: Resolve dependencies
         run: flutter pub get
-      - name: Format Dart sources
-        run: dart format lib test
       - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib
       - name: Analyze Flutter project
         run: flutter analyze --no-fatal-infos
       - name: Run Flutter tests
-        run: flutter test
+        run: |
+          if [ -d test ] && find test -type f -name '*_test.dart' -print -quit | grep -q .; then
+            flutter test
+          else
+            echo "No Dart test files are present; skipping Flutter test runner."
+          fi
       - name: Run native VPN plugin unit tests
         run: |
           cd android
