@@ -614,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       children: [
                         const Text('NOVA VPN',
                             style: TextStyle(
-                                color: Color(0xFFF0F4FF),
+                                color: _lightTheme ? Color(0xFF20334D) : Color(0xFFF0F4FF),
                                 fontSize: 23,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.2)),
@@ -827,8 +827,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: _lightTheme ? Color(0xFF243650) : Color(0xFFE9E8EE),
+                                    style: TextStyle(
+                                        color: _lightTheme ? const Color(0xFF243650) : const Color(0xFFE9E8EE),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700),
                                   ),
