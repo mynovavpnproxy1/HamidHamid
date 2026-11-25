@@ -1,6 +1,6 @@
 # Android engine integration status
 
-The client now depends on `flutter_v2ray_client` 3.5.0 and has an adapter that initializes the engine, requests Android VPN permission, starts/stops a tunnel, and listens to engine status callbacks. The UI only enters the Connected state after receiving the plugin's `CONNECTED` event.
+The client depends on `flutter_v2ray_client` 3.5.0 and has an adapter that initializes the engine, requests Android VPN permission, starts/stops a tunnel, and listens to engine status callbacks. A native `CONNECTED` event is only a core-start signal; the UI remains in a verification state until an HTTPS data-plane probe succeeds.
 
 The backend now supports device registration, administrator approval, and short-lived client tokens. On first connection, the app registers its device; an administrator must approve it in `/admin` before profile delivery. Missing or invalid tokens return 401 and unapproved devices return 403. The app then requests the profile just in time over HTTPS. No actual server/profile has been provided, and no device build or live tunnel test has been performed.
 
@@ -32,3 +32,15 @@ The plugin repository has a top-level MIT license, but that does not settle the 
 The Xray plugin is already integrated at source level; it does not need to be copied into the app again. `app/pubspec.yaml` pins the owned fork at `89fdab138073333eb0eaf03ac2e16dbde874be1c`. `VpnService` owns initialization, permission, profile conversion, connect/disconnect, and native status stream; `HomeScreen` consumes that stream. CI generates the Android Gradle project under `app/android` when absent and now includes the plugin's JUnit test task before APK packaging.
 
 The latest Gradle dependency-layout correction and app pin are committed, but no CI run after those commits has been verified. Do not claim the latest plugin compiles, its unit tests pass, or the APK builds until a successful workflow artifact is inspected. A native `CONNECTED` event remains only a core-start signal, not proof of tunneled internet traffic.
+
+## Data-plane verification implementation — 2026-11-25
+
+VpnService.connect() now waits for the native CONNECTED callback and then performs up to three HTTPS requests to api.ipify.org, validating the returned IPv4 address before the connection call returns successfully. Failure triggers a best-effort engine stop and returns a data-plane verification error. When an existing session is restored after app recreation, HomeScreen performs the same probe before showing Connected and stops the session if verification fails.
+
+This is an initial IPv4/TCP-over-HTTPS reachability gate, not a complete leak or protocol test. It does not independently prove DNS privacy, IPv6 tunneling, UDP forwarding, kill-switch behavior, or long-term stability. It also has not yet been executed on a physical device with an authorized working profile.
+
+## CI workflow hardening — 2026-11-25
+
+The Android job runs from the app directory, resolves Flutter dependencies there, and generates app/android only when absent. The plugin package name is flutter_v2ray_client, matching the Gradle test task :flutter_v2ray_client:testDebugUnitTest. Formatting is checked without mutating source files and includes both lib and test; the Flutter test runner is skipped only if no Dart test files exist. The APK artifact path is relative to the repository workspace and points to app/build/app/outputs/flutter-apk/app-debug.apk.
+
+Workflow commits f43291b3305183dc31391020f2a16a275cf32d76 and a2758b8a6fc9602c2dd4097c1f450a96d33f5eff are committed and the final workflow content was fetched again. GitHub Actions run status is not yet available through the current run lookup (which only returns pull-request-triggered runs); no build, JUnit, or APK success is claimed.
