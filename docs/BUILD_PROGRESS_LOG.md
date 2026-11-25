@@ -103,3 +103,13 @@ Follow-up build preparation:
 - The CI workflow includes the native plugin unit-test task before APK packaging. No successful CI run after these latest commits has been observed yet; compilation, JUnit execution, APK packaging, and physical-device traffic remain unverified.
 
 **Integration status:** source-level engine integration is present. The next gate is a clean CI build/test of the exact pinned commit, then an authorized device/profile data-plane test. This is not release approval.
+
+## Data-plane gate and CI workflow correction — 2026-11-25
+
+- App source commits already on main implement a real HTTPS probe after the native core reports CONNECTED; the probe validates an IPv4 response from api.ipify.org. The Home screen remains in a verification state until the probe succeeds. Restored sessions are probed before showing Connected.
+- This is only an initial IPv4/TCP-over-HTTPS check. It does not establish DNS privacy, IPv6 tunneling, UDP, kill-switch behavior, or stability, and it has not been run on a physical device.
+- Audited .github/workflows/nova_ci.yml: the Android job default working directory is app; flutter pub get therefore resolves the pinned Git plugin in the correct project. The generated Android project lives at app/android; the Gradle test task is :flutter_v2ray_client:testDebugUnitTest, matching the plugin pubspec name.
+- Corrected the workflow so Dart formatting is a non-mutating check and includes both lib and the existing test directory. Flutter tests run when Dart test files exist. The workflow still builds the debug APK after native JUnit tests and uploads app/build/app/outputs/flutter-apk/app-debug.apk.
+- Workflow commits: f43291b3305183dc31391020f2a16a275cf32d76 and a2758b8a6fc9602c2dd4097c1f450a96d33f5eff. Both workflow revisions and this progress log are fetched again after commit.
+- GitHub Actions run results could not be obtained from the available commit-run lookup because that endpoint is limited to pull-request-triggered runs. Combined commit status returned no status checks. Therefore no CI success, JUnit pass, APK build, or device traffic result is claimed.
+- Next gate: obtain the actual push-triggered workflow run and inspect job steps/logs; if successful, download and verify the APK artifact, then test it on an Android device using a valid authorized VPN profile.
