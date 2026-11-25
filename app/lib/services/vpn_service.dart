@@ -260,6 +260,8 @@ class VpnService {
     }
   }
 
+  Future<void> verifyActiveDataPlane() => _verifyDataPlane();
+
   Future<void> disconnect() async {
     await initialize();
     await _engine.stopV2Ray();
