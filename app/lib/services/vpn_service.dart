@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
+import 'package:http/http.dart' as http;
 
 /// رابط اپ با موتور VPN اندروید.
 /// وضعیت موتور از callback بومی خوانده می‌شود؛ این رویداد به‌تنهایی عبور ترافیک TUN را ثابت نمی‌کند.
@@ -181,9 +182,13 @@ class VpnService {
         );
 
         await connectedFuture.timeout(timeout);
+        await _verifyDataPlane();
       } on TimeoutException {
         await _stopPreservingFailure();
         throw const VpnConnectionTimeoutException();
+      } on VpnDataPlaneException {
+        await _stopPreservingFailure();
+        rethrow;
       } catch (_) {
         await _stopPreservingFailure();
         // جزئیات خطای بومی ممکن است حاوی دادهٔ حساس پروفایل باشند.
@@ -194,6 +199,36 @@ class VpnService {
     } finally {
       _attemptInProgress = false;
     }
+  }
+
+
+  /// Requires a successful HTTPS request through Android's active VPN route.
+  /// The native CONNECTED callback alone is not treated as a working tunnel.
+  Future<void> _verifyDataPlane() async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        final response = await http
+            .get(
+              Uri.https('api.ipify.org', '/'),
+              headers: const {'Cache-Control': 'no-store'},
+            )
+            .timeout(const Duration(seconds: 7));
+        final address = response.body.trim();
+        final octets = address.split('.');
+        final validIpv4 = octets.length == 4 &&
+            octets.every((part) {
+              final value = int.tryParse(part);
+              return value != null && value >= 0 && value <= 255;
+            });
+        if (response.statusCode == 200 && validIpv4) return;
+      } catch (_) {
+        // Retry briefly while Android installs the VPN routes.
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+    }
+    throw const VpnDataPlaneException();
   }
 
   String _toEngineConfig(String profile) {
@@ -245,4 +280,8 @@ class VpnConnectionException implements Exception {
 
 class VpnConnectionTimeoutException implements Exception {
   const VpnConnectionTimeoutException();
+}
+
+class VpnDataPlaneException implements Exception {
+  const VpnDataPlaneException();
 }
