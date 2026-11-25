@@ -10,3 +10,10 @@ Before public launch, deploy the backend behind HTTPS, configure the app's `API_
 ## Supported protocol boundary
 
 The pinned Android dependency is `flutter_v2ray_client` 3.5.0, which embeds Xray. The current server API therefore accepts only VLESS, VMess, Trojan, and Shadowsocks profile schemes. Hysteria/Hysteria2, TUIC, and WireGuard are not enabled in the current client path. A Sing-box migration is a separate decision: the inspected `flutter_singbox_client` Android plugin is GPL-3.0-only, so its copyleft obligations must be assessed before using it in an ad-supported distributable app. The current Xray plugin is MIT-licensed. Do not advertise or accept a protocol just because the backend can store its name.
+
+
+## Native socket protection hardening — 2026-11-25
+
+The owned `flutter_v2ray_client` fork was patched and pinned to commit `d50467c1510edf740cae80d4556e3c4512cd4354`. Its native socket protector now fails closed when the service listener is absent, the descriptor is invalid, the callback throws, or Android `protect(fd)` returns false. JUnit test source was added for these cases. The app dependency pin is updated in `app/pubspec.yaml`.
+
+This patch does **not** prove successful tunnel traffic and does not fix the candidate's immediate CONNECTED state transition, bypass-subnet routing, or IPv6 sinkhole policy. The native AAR's exact source/build provenance and redistribution notices also remain unverified. Build and test results after the patch are pending.
