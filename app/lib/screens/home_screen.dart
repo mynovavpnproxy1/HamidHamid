@@ -66,9 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _downloadedBytes = status.download;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
-          _connection = _ConnectionUi.connected;
+          // Native core startup is not proof of working TUN traffic.
+          // VpnService.connect() verifies an HTTPS request before this screen
+          // transitions to the connected state.
+          _connection = _ConnectionUi.connecting;
           _duration = status.duration;
-          _message = null;
+          _message = _fa ? 'در حال بررسی عبور ترافیک…' : 'Verifying VPN traffic…';
           break;
         case 'CONNECTING':
           _connection = _ConnectionUi.connecting;
@@ -99,10 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
           break;
       }
     });
-    if (status.state.toUpperCase() == 'CONNECTED' && !_pingAttempted) {
-      _pingAttempted = true;
-      unawaited(_refreshConnectedPing());
-    }
   }
 
   Future<void> _refreshConnectedPing() async {
@@ -300,7 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
           _preferredServer = connectedServer;
           _connection = _ConnectionUi.connected;
           _message = null;
+          _pingAttempted = true;
         });
+        unawaited(_refreshConnectedPing());
       }
     } on VpnPermissionException {
       if (mounted) {
