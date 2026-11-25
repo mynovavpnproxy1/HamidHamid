@@ -17,3 +17,8 @@ The pinned Android dependency is `flutter_v2ray_client` 3.5.0, which embeds Xray
 The owned `flutter_v2ray_client` fork was patched and pinned to commit `d50467c1510edf740cae80d4556e3c4512cd4354`. Its native socket protector now fails closed when the service listener is absent, the descriptor is invalid, the callback throws, or Android `protect(fd)` returns false. JUnit test source was added for these cases. The app dependency pin is updated in `app/pubspec.yaml`.
 
 This patch does **not** prove successful tunnel traffic and does not fix the candidate's immediate CONNECTED state transition, bypass-subnet routing, or IPv6 sinkhole policy. The native AAR's exact source/build provenance and redistribution notices also remain unverified. Build and test results after the patch are pending.
+
+
+## Native status and data-plane distinction
+
+The plugin's `CONNECTED` callback is currently emitted after the native `startLoop()` call returns and the manager sets its internal state. It confirms native core startup, not end-to-end TUN traffic. The exposed server-delay method calls the core's outbound delay measurement; it is useful as a server-reachability signal but is not proof that arbitrary Android app packets traverse the TUN. A dedicated data-plane probe and physical-device traffic tests are still required.
