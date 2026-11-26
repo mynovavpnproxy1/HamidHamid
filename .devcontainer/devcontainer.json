@@ -14,6 +14,15 @@
   },
   "postCreateCommand": "bash .devcontainer/build-apk.sh",
   "customizations": {
+    "codespaces": {
+      "repositories": {
+        "mynovavpnproxy1/flutter_v2ray_client": {
+          "permissions": {
+            "contents": "read"
+          }
+        }
+      }
+    },
     "vscode": {
       "extensions": [
         "Dart-Code.flutter",
