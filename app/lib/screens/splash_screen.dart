@@ -75,20 +75,54 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const NovaParticleLogo(size: 224),
-                      SizedBox(height: 30),
-                      Text(
-                        'NOVA VPN',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4,
-                          color: Color(0xFF45DFFF),
+                      const SizedBox(height: 30),
+                      ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xFF22D3EE),
+                            Color(0xFF3B82F6),
+                            Color(0xFF9B5DE5),
+                          ],
+                        ).createShader(bounds),
+                        child: const Text(
+                          'NOVA VPN',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Color(0xAA22D3EE),
+                                blurRadius: 18,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(height: 14),
-                      SizedBox(height: 18),
-                      Text(
+                      const SizedBox(height: 10),
+                      const Text(
+                        'JEYRN GUROP',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 5,
+                          color: Color(0xFF39D6C8),
+                          shadows: [
+                            Shadow(
+                              color: Color(0x9939D6C8),
+                              blurRadius: 12,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
                         'اتصال هوشمند، سریع و امن',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
@@ -98,14 +132,16 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Color(0xFF54C9F4),
                         ),
                       ),
-                      SizedBox(height: 34),
-                      SizedBox(
+                      const SizedBox(height: 34),
+                      const SizedBox(
                         width: 92,
                         child: LinearProgressIndicator(
                           minHeight: 3,
                           borderRadius: BorderRadius.all(Radius.circular(8)),
                           backgroundColor: Color(0xFF1D2B49),
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF35A8FF)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF35A8FF),
+                          ),
                         ),
                       ),
                     ],
