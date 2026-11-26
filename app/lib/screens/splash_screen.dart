@@ -106,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'JEYRN GUROP',
+                        'JEYRAN GROUP',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
