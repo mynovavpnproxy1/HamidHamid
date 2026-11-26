@@ -291,7 +291,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final connectedServer = await connectWithFallback<VpnServer>(
         candidates: candidates,
         isFatal: (error) => _cancelRequested ||
-            error is ApiException || error is VpnPermissionException,
+            (error is ApiException &&
+                (error.statusCode == 401 ||
+                    error.statusCode == 403 ||
+                    error.statusCode == 429)) ||
+            error is VpnPermissionException,
         onAttempt: (server, index) {
           if (!mounted) return;
           setState(() {
