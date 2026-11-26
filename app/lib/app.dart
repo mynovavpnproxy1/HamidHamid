@@ -31,7 +31,7 @@ class NovaVpnApp extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(top: 3, bottom: 5),
                 child: Text(
-                  '۳۰۰۷۱۳۶۶',
+                  '30071366',
                   textDirection: TextDirection.ltr,
                   style: const TextStyle(
                     fontSize: 13,
