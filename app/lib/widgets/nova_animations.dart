@@ -69,21 +69,21 @@ class _NovaParticlesPainter extends CustomPainter {
     }
 
     // N
-    line(7, 25, 7, 87, 115);
-    line(7, 25, 25, 87, 125);
-    line(25, 87, 25, 25, 115);
+    line(7, 25, 7, 87, 200);
+    line(7, 25, 25, 87, 210);
+    line(25, 87, 25, 25, 200);
     // O
-    for (var i = 0; i < 280; i++) {
+    for (var i = 0; i < 460; i++) {
       final a = random.nextDouble() * math.pi * 2;
       points.add(Offset(43 + math.cos(a) * 12, 56 + math.sin(a) * 31));
     }
     // V
-    line(61, 25, 75, 87, 125);
-    line(75, 87, 89, 25, 125);
+    line(61, 25, 75, 87, 220);
+    line(75, 87, 89, 25, 220);
     // A
-    line(92, 87, 101, 25, 115);
-    line(101, 25, 110, 87, 115);
-    line(95, 65, 107, 65, 70);
+    line(92, 87, 101, 25, 200);
+    line(101, 25, 110, 87, 200);
+    line(95, 65, 107, 65, 130);
 
     final glowPaint = Paint()
       ..color = const Color(0xFF398CFF).withValues(alpha: .10)
