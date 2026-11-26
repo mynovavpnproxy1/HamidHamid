@@ -226,12 +226,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     dense: true,
                   ),
                   const Divider(height: 1, color: Color(0xFF2B2933)),
-                  _comingSoonRow(
-                    icon: Icons.mail_outline_rounded,
-                    title: _fa ? 'تماس با ما' : 'Contact us',
-                    subtitle: _fa
-                        ? 'راه ارتباطی رسمی هنوز ثبت نشده است'
-                        : 'An official contact channel has not been configured',
+                  ListTile(
+                    leading: const Icon(
+                      Icons.mail_outline_rounded,
+                      color: Color(0xFF4D91FF),
+                      size: 20,
+                    ),
+                    title: Text(
+                      _fa ? 'تماس با ما' : 'Contact us',
+                      style: TextStyle(
+                        color: _lightTheme
+                            ? const Color(0xFF263B59)
+                            : const Color(0xFFE0DFE7),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: const SelectableText(
+                      'mynovavpnproxy@gmail.com',
+                      textDirection: TextDirection.ltr,
+                      style: TextStyle(
+                        color: Color(0xFF4D91FF),
+                        fontSize: 12,
+                      ),
+                    ),
+                    dense: true,
                   ),
                   const Divider(height: 1, color: Color(0xFF2B2933)),
                   _comingSoonRow(
