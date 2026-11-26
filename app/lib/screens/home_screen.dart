@@ -32,7 +32,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   VpnServer? _preferredServer;
   String _language = 'fa';
   bool _lightTheme = false;
-  String _duration = '00:00:00';
+  Timer? _autoDisconnectTimer;
+  int _autoDisconnectRemainingSeconds = 2 * 60 * 60;
   int _uploadSpeed = 0;
   int _downloadSpeed = 0;
   int _uploadedBytes = 0;
@@ -78,8 +79,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _downloadedBytes = status.download;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
+          final wasConnected = _connection == _ConnectionUi.connected;
           _connection = _ConnectionUi.connected;
-          _duration = status.duration;
+          if (!wasConnected) _startAutoDisconnectTimer();
           _message = null;
           break;
         case 'CONNECTING':
@@ -91,7 +93,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         case 'DISCONNECTED':
           if (!_failoverRunning || _connection == _ConnectionUi.disconnecting) {
             _connection = _ConnectionUi.disconnected;
-            _duration = '00:00:00';
+            _autoDisconnectTimer?.cancel();
+            _autoDisconnectTimer = null;
+            _autoDisconnectRemainingSeconds = 2 * 60 * 60;
             _uploadSpeed = 0;
             _downloadSpeed = 0;
             _uploadedBytes = 0;
@@ -128,6 +132,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
+  String _formatAutoDisconnect(int totalSeconds) {
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _startAutoDisconnectTimer() {
+    _autoDisconnectTimer?.cancel();
+    _autoDisconnectRemainingSeconds = 2 * 60 * 60;
+    _autoDisconnectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || !_connected) {
+        timer.cancel();
+        _autoDisconnectTimer = null;
+        return;
+      }
+      if (_autoDisconnectRemainingSeconds <= 1) {
+        timer.cancel();
+        _autoDisconnectTimer = null;
+        setState(() => _autoDisconnectRemainingSeconds = 0);
+        unawaited(_disconnect());
+        return;
+      }
+      setState(() => _autoDisconnectRemainingSeconds--);
+    });
+  }
+
   String _formatRate(int bytesPerSecond) {
     if (bytesPerSecond < 1024) return '$bytesPerSecond B/s';
     if (bytesPerSecond < 1024 * 1024) {
@@ -150,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _pulseController.dispose();
+    _autoDisconnectTimer?.cancel();
     _statusSubscription?.cancel();
     _api.close();
     super.dispose();
@@ -194,6 +228,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _disconnect() async {
+    _autoDisconnectTimer?.cancel();
+    _autoDisconnectTimer = null;
     setState(() {
       _busy = true;
       _connection = _ConnectionUi.disconnecting;
@@ -205,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         setState(() {
           _connection = _ConnectionUi.disconnected;
           _activeServer = null;
-          _duration = '00:00:00';
         });
       }
     } catch (_) {
@@ -653,12 +688,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 if (_connected) ...[
                   const SizedBox(height: 7),
-                  Text(
-                    _duration,
-                    style: const TextStyle(
-                        color: Color(0xFF8F8D99),
-                        fontSize: 11,
-                        fontFeatures: [FontFeature.tabularFigures()]),
+                  Column(
+                    children: [
+                      Text(
+                        _fa ? 'زمان باقی‌مانده تا قطع خودکار' : 'Auto-disconnect in',
+                        style: const TextStyle(
+                          color: Color(0xFF8F8D99),
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _formatAutoDisconnect(_autoDisconnectRemainingSeconds),
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          color: Color(0xFFFFC34D),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 24),
