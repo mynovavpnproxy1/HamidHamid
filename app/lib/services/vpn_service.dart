@@ -272,3 +272,7 @@ class VpnConnectionException implements Exception {
 class VpnConnectionTimeoutException implements Exception {
   const VpnConnectionTimeoutException();
 }
+
+class VpnDisconnectTimeoutException implements Exception {
+  const VpnDisconnectTimeoutException();
+}
