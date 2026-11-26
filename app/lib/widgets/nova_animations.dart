@@ -51,7 +51,7 @@ class _NovaParticlesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final side = math.min(size.width, size.height);
+    final side = math.min(size.width, size.height).toDouble();
     final center = Offset(size.width / 2, size.height / 2);
     final unit = side / 112;
     final random = math.Random(731);
@@ -166,7 +166,7 @@ class _NovaOrbitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * .31;
+    final radius = math.min(size.width, size.height).toDouble() * .31;
 
     final coreGlow = Paint()
       ..color = const Color(0xFF287BFF).withValues(alpha: .20)
