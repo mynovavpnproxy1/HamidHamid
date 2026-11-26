@@ -48,30 +48,7 @@ class ApiService {
     return base.resolve(path);
   }
 
-  Future<List<VpnServer>> fetchServers() async {
-    final response = await _client
-        .get(
-          _uri('/api/v1/servers'),
-          headers: const {'Cache-Control': 'no-store'},
-        )
-        .timeout(const Duration(seconds: 15));
-
-    if (response.statusCode != 200) {
-      throw ApiException('Server list unavailable.');
-    }
-
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic> || decoded['servers'] is! List) {
-      throw const FormatException('Invalid server-list response.');
-    }
-
-    return (decoded['servers'] as List)
-        .map((item) =>
-            VpnServer.fromJson(Map<String, dynamic>.from(item as Map)))
-        .toList(growable: false);
-  }
-
-  Future<String> fetchServerConfig(String serverId) async {
+  Future<String> _clientToken() async {
     var token = await _storage.readAccessToken();
     if (token == null || token.trim().isEmpty) {
       try {
@@ -80,10 +57,11 @@ class ApiService {
         throw ApiException(error.message, statusCode: error.statusCode);
       }
     }
+    return token;
+  }
 
-    final path =
-        '/api/v1/servers/${Uri.encodeComponent(serverId)}/config';
-
+  Future<http.Response> _authorizedGet(String path) async {
+    var token = await _clientToken();
     var response = await _client
         .get(
           _uri(path),
@@ -111,6 +89,89 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 15));
     }
+    return response;
+  }
+
+  Future<List<VpnServer>> fetchServers() async {
+    final response = await _client
+        .get(
+          _uri('/api/v1/servers'),
+          headers: const {'Cache-Control': 'no-store'},
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode != 200) {
+      throw ApiException('Server list unavailable.');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['servers'] is! List) {
+      throw const FormatException('Invalid server-list response.');
+    }
+
+    final manualServers = (decoded['servers'] as List)
+        .map((item) => VpnServer.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList(growable: true);
+
+    // Vox locations are dynamic and are refreshed from the backend.
+    // If Vox has not yet been configured, retain any manually managed servers.
+    try {
+      manualServers.addAll(await fetchVoxServers());
+    } on ApiException catch (error) {
+      if (error.statusCode != 503) rethrow;
+    }
+
+    return manualServers;
+  }
+
+  Future<List<VpnServer>> fetchVoxServers() async {
+    // Location metadata is non-sensitive and can be shown before device approval.
+    final response = await _client
+        .get(
+          _uri('/api/v1/vox/locations?protocol=vless'),
+          headers: const {'Cache-Control': 'no-store'},
+        )
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw ApiException(
+        'Vox locations unavailable (${response.statusCode}).',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['locations'] is! List) {
+      throw const FormatException('Invalid Vox locations response.');
+    }
+
+    return (decoded['locations'] as List).map((raw) {
+      final item = Map<String, dynamic>.from(raw as Map);
+      final id = item['id'] as String;
+      final label = (item['label'] as String?) ?? id;
+      final countryCode = item['country'] as String?;
+      final countryName = item['country_name'] as String?;
+      final city = (item['city'] as String?) ?? label;
+      return VpnServer(
+        id: 'vox:$id',
+        name: label,
+        protocol: 'VLESS',
+        countryCode: countryCode,
+        countryNameFa: null,
+        countryNameEn: countryName,
+        locationNameFa: null,
+        locationNameEn: city,
+        locationVerified: countryCode != null && countryCode.length == 2,
+      );
+    }).toList(growable: false);
+  }
+
+  Future<String> fetchServerConfig(String serverId) async {
+    if (serverId.startsWith('vox:')) {
+      return fetchVoxServerConfig(serverId.substring(4));
+    }
+
+    final path = '/api/v1/servers/${Uri.encodeComponent(serverId)}/config';
+    final response = await _authorizedGet(path);
 
     if (response.statusCode == 403) {
       throw const ApiException(
@@ -133,6 +194,32 @@ class ApiService {
       throw const FormatException('Invalid profile response.');
     }
 
+    return decoded['config'] as String;
+  }
+
+  Future<String> fetchVoxServerConfig(String locationId) async {
+    final path = '/api/v1/vox/config?location=${Uri.encodeQueryComponent(locationId)}&protocol=vless';
+    final response = await _authorizedGet(path);
+
+    if (response.statusCode == 403) {
+      throw const ApiException(
+        'This device is awaiting administrator approval.',
+        statusCode: 403,
+      );
+    }
+    if (response.statusCode != 200) {
+      throw ApiException(
+        'Vox profile unavailable (${response.statusCode}).',
+        statusCode: response.statusCode,
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['config'] is! String ||
+        (decoded['config'] as String).trim().isEmpty) {
+      throw const FormatException('Invalid Vox profile response.');
+    }
     return decoded['config'] as String;
   }
 
