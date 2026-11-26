@@ -225,9 +225,35 @@ class VpnService {
     }
   }
 
-  Future<void> disconnect() async {
+  Future<void> disconnect({
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
     await initialize();
-    await _engine.stopV2Ray();
+
+    if (_latestStatus.state.toUpperCase() == 'DISCONNECTED') {
+      return;
+    }
+
+    final stopped = Completer<void>();
+    final subscription = statusChanges.listen((status) {
+      if (status.state.toUpperCase() == 'DISCONNECTED' &&
+          !stopped.isCompleted) {
+        stopped.complete();
+      }
+    });
+
+    try {
+      await _engine.stopV2Ray();
+      if (_latestStatus.state.toUpperCase() == 'DISCONNECTED' &&
+          !stopped.isCompleted) {
+        stopped.complete();
+      }
+      await stopped.future.timeout(timeout);
+    } on TimeoutException {
+      throw const VpnDisconnectTimeoutException();
+    } finally {
+      await subscription.cancel();
+    }
   }
 }
 
