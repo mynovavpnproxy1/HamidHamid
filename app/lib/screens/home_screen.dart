@@ -680,8 +680,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       onTap: _busy ? null : _toggleConnection,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 260),
-                        width: 184,
-                        height: 68,
+                        width: 164,
+                        height: 76,
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(48),
@@ -713,8 +713,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
                           child: Container(
-                            width: 58,
-                            height: 58,
+                            width: 66,
+                            height: 66,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFFECEBF0),
