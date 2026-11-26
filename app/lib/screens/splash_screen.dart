@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../screens/home_screen.dart';
+import '../widgets/nova_animations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -73,17 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        'assets/brand/nova_logo_new.jpg',
-                        width: 206,
-                        height: 206,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.shield_outlined,
-                          size: 164,
-                          color: Color(0xFF3B82F6),
-                        ),
-                      ),
+                      const NovaParticleLogo(size: 224),
                       SizedBox(height: 30),
                       Text(
                         'NOVA VPN',
@@ -92,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: 34,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 4,
-                          color: Color(0xFFF2F5FA),
+                          color: Color(0xFF45DFFF),
                         ),
                       ),
                       SizedBox(height: 14),
@@ -104,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFD4DCE8),
+                          color: Color(0xFF54C9F4),
                         ),
                       ),
                       SizedBox(height: 34),
