@@ -168,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen>
         _internetAvailable =
             (results[0] as bool) || serverListAvailable;
       });
+      await _refreshHomeContent();
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
