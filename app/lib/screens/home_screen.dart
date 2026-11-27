@@ -83,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen>
     unawaited(_initializeHomeState());
     // Refresh server metadata and test real internet reachability on launch.
     unawaited(_refreshHome());
-    unawaited(_refreshHomeContent());
   }
 
   @override
