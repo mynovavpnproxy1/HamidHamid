@@ -177,7 +177,7 @@ async def add_security_headers(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "no-referrer")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-    if request.url.path == "/admin" or request.url.path.startswith("/api/v1/admin/") or request.url.path.endswith("/config"):
+    if request.url.path in {"/admin", "/api/v1/home-content"} or request.url.path.startswith("/api/v1/admin/") or request.url.path.endswith("/config"):
         response.headers["Cache-Control"] = "no-store"
     return response
 
