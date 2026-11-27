@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
 
@@ -49,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _selectedFavorite = false;
   int _currentAttempt = 0;
   int _attemptCount = 0;
+  bool _refreshing = false;
+  bool? _internetAvailable;
 
   bool get _fa => _language == 'fa';
   bool get _connected => _connection == _ConnectionUi.connected;
@@ -68,6 +71,79 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     _statusSubscription = _vpn.statusChanges.listen(_onEngineStatus);
     _onEngineStatus(_vpn.currentStatus);
+    // Refresh server metadata and test real internet reachability on launch.
+    unawaited(_refreshHome());
+  }
+
+  Future<bool> _checkInternetReachability() async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 5);
+    try {
+      final request = await client
+          .getUrl(Uri.https('www.gstatic.com', '/generate_204'))
+          .timeout(const Duration(seconds: 6));
+      request.followRedirects = false;
+      final response =
+          await request.close().timeout(const Duration(seconds: 6));
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<void> _refreshHome() async {
+    if (_refreshing || !mounted) return;
+    setState(() => _refreshing = true);
+    try {
+      final results = await Future.wait<Object?>([
+        _checkInternetReachability(),
+        _api.fetchServers().then<Object?>((servers) => servers).catchError(
+              (_) => null,
+            ),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _internetAvailable = results[0] as bool;
+      });
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  Widget _buildInternetIndicator() {
+    final available = _internetAvailable;
+    final color = available == null
+        ? const Color(0xFF8792A5)
+        : available
+            ? const Color(0xFF20C982)
+            : const Color(0xFFE34C5B);
+    final icon = available == null
+        ? Icons.sync_rounded
+        : available
+            ? Icons.check_rounded
+            : Icons.close_rounded;
+    final label = available == null
+        ? (_fa ? 'در حال بررسی اینترنت' : 'Checking internet')
+        : available
+            ? (_fa ? 'اینترنت در دسترس است' : 'Internet available')
+            : (_fa ? 'اینترنت در دسترس نیست' : 'Internet unavailable');
+    return Tooltip(
+      message: label,
+      child: Container(
+        width: 27,
+        height: 27,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: .16),
+          border: Border.all(color: color, width: 1.2),
+        ),
+        child: Icon(icon, color: color, size: 17),
+      ),
+    );
   }
 
   void _onEngineStatus(V2RayStatus status) {
@@ -619,9 +695,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Scaffold(
         backgroundColor: _lightTheme ? const Color(0xFFF2F6FC) : const Color(0xFF0B0A10),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-            child: Column(
+          child: RefreshIndicator(
+            onRefresh: _refreshHome,
+            color: const Color(0xFF42C9E8),
+            backgroundColor: const Color(0xFF14131A),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
               children: [
                 Row(
                   children: [
@@ -644,6 +724,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       icon: const Icon(Icons.tune_rounded,
                           color: Color(0xFFB9C9E4), size: 25),
                     ),
+                    const SizedBox(width: 8),
+                    _buildInternetIndicator(),
                     const Spacer(),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -794,7 +876,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                 ),
                 const SizedBox(height: 16),
-                Expanded(
+                SizedBox(
+                  height: 104,
                   child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 92),
