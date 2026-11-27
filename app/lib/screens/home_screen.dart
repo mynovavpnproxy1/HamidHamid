@@ -79,6 +79,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _downloadedBytes = status.download;
       switch (status.state.toUpperCase()) {
         case 'CONNECTED':
+          // Ignore late CONNECTED callbacks while a user-requested stop is
+          // in progress. The disconnect flow must finish only on DISCONNECTED.
+          if (_connection == _ConnectionUi.disconnecting) break;
           final wasConnected = _connection == _ConnectionUi.connected;
           _connection = _ConnectionUi.connected;
           if (!wasConnected) _startAutoDisconnectTimer();
