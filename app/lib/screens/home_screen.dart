@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/vpn_server.dart';
 import '../services/api_service.dart';
@@ -53,6 +54,10 @@ class _HomeScreenState extends State<HomeScreen>
   int _attemptCount = 0;
   bool _refreshing = false;
   bool? _internetAvailable;
+  HomeContent? _homeContent;
+  int _announcementIndex = 0;
+  int _homeAdIndex = 0;
+  Timer? _homeRotationTimer;
 
   bool get _fa => _language == 'fa';
   bool get _connected => _connection == _ConnectionUi.connected;
@@ -78,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen>
     unawaited(_initializeHomeState());
     // Refresh server metadata and test real internet reachability on launch.
     unawaited(_refreshHome());
+    unawaited(_refreshHomeContent());
   }
 
   @override
@@ -165,6 +171,105 @@ class _HomeScreenState extends State<HomeScreen>
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
+  }
+
+  Future<void> _refreshHomeContent() async {
+    try {
+      final content = await _api.fetchHomeContent();
+      if (!mounted) return;
+      setState(() {
+        _homeContent = content;
+        _announcementIndex = 0;
+        _homeAdIndex = 0;
+      });
+      _homeRotationTimer?.cancel();
+      if (content.announcements.length > 1 || content.ads.length > 1) {
+        _homeRotationTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+          if (!mounted) return;
+          setState(() {
+            if (content.announcements.length > 1) {
+              _announcementIndex = (_announcementIndex + 1) % content.announcements.length;
+            }
+            if (content.adMode == 'manual' && content.ads.length > 1) {
+              _homeAdIndex = (_homeAdIndex + 1) % content.ads.length;
+            }
+          });
+        });
+      }
+    } catch (_) {
+      // Keep the current home content if the backend is temporarily unavailable.
+    }
+  }
+
+  Widget _buildAnnouncementBar() {
+    final items = _homeContent?.announcements ?? const <HomeAnnouncement>[];
+    if (items.isEmpty) return const SizedBox.shrink();
+    final index = _announcementIndex % items.length;
+    return Container(
+      height: 28,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17263B),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF314A70)),
+      ),
+      alignment: Alignment.center,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: Text(items[index].message, key: ValueKey(items[index].id), maxLines: 1,
+          overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF75D9F2), fontSize: 11, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  Widget _buildHomeAdPlacement() {
+    final content = _homeContent;
+    if (content == null || content.adMode == 'network') {
+      return SizedBox(
+        height: 104,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF14131A),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _lightTheme ? const Color(0xFFD5E0EF) : const Color(0xFF24232C)),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            content?.adMode == 'network'
+                ? (_fa ? 'جایگاه تبلیغات شبکه‌ای' : 'Ad network placement')
+                : (_fa ? 'جایگاه تبلیغات NOVA' : 'NOVA ad placement'),
+            style: const TextStyle(color: Color(0xFF777680), fontSize: 11),
+          ),
+        ),
+      );
+    }
+    if (content.ads.isEmpty) return const SizedBox.shrink();
+    final ad = content.ads[_homeAdIndex % content.ads.length];
+    return SizedBox(
+      height: 104,
+      width: double.infinity,
+      child: GestureDetector(
+        onTap: () => launchUrl(Uri.parse(ad.targetUrl), mode: LaunchMode.externalApplication),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Stack(fit: StackFit.expand, children: [
+            Image.network(ad.imageUrl, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: const Color(0xFF141D2B), alignment: Alignment.center,
+                child: Text(ad.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              )),
+            Positioned(left: 0, right: 0, bottom: 0,
+              child: Container(color: const Color(0x99000000), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                child: Text(ad.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)))),
+          ]),
+        ),
+      ),
+    );
   }
 
   Widget _buildInternetIndicator() {
@@ -332,6 +437,7 @@ class _HomeScreenState extends State<HomeScreen>
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _autoDisconnectTimer?.cancel();
+    _homeRotationTimer?.cancel();
     _statusSubscription?.cancel();
     _api.close();
     super.dispose();
@@ -842,6 +948,10 @@ class _HomeScreenState extends State<HomeScreen>
                     letterSpacing: -.8,
                   ),
                 ),
+                if (_homeContent?.announcements.isNotEmpty == true) ...[
+                  const SizedBox(height: 9),
+                  _buildAnnouncementBar(),
+                ],
                 if (_connected) ...[
                   const SizedBox(height: 7),
                   Column(
@@ -947,25 +1057,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height: 104,
-                  child: Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 92),
-                    decoration: BoxDecoration(
-                      color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF14131A),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: _lightTheme ? const Color(0xFFD5E0EF) : const Color(0xFF24232C)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _fa ? 'جایگاه تبلیغات NOVA' : 'NOVA ad placement',
-                        style: const TextStyle(
-                            color: Color(0xFF45444E), fontSize: 11),
-                      ),
-                    ),
-                  ),
-                ),
+                _buildHomeAdPlacement(),
                 const SizedBox(height: 14),
                 Container(
                   width: double.infinity,
