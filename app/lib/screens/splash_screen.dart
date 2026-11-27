@@ -108,7 +108,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const Spacer(flex: 4),
-                    ),
                   ],
                 ),
               ),
