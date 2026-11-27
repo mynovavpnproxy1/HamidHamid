@@ -37,6 +37,11 @@ Do not commit real credentials or put them in the Android application. Render fr
 - `GET /api/v1/admin/servers/{id}` — authenticated detail (includes raw configuration for owner editing).
 - `PUT /api/v1/admin/servers/{id}` — authenticated update / configuration rotation.
 - `DELETE /api/v1/admin/servers/{id}` — authenticated delete.
+- `GET /api/v1/home-content` — active home-page ad configuration, manual ad records, and active announcement messages.
+- `GET /api/v1/admin/home-content` — authenticated home-page advertising and announcement management data.
+- `PUT /api/v1/admin/home-content/settings` — switch the home ad placement between manual ads and a supported ad network (currently Adsterra configuration fields are prepared).
+- `POST/PUT/DELETE /api/v1/admin/home-content/ads[/{id}]` — manage an unlimited list of manually supplied HTTPS image ads and destination links.
+- `POST/PUT/DELETE /api/v1/admin/home-content/announcements[/{id}]` — manage multiple messages for the rotating home-page announcement strip.
 - `GET /api/v1/servers` — active server metadata only.
 - `POST /api/v1/client/register` — register a device ID. New devices are saved as pending and receive HTTP 403 until approved.
 - `GET /api/v1/admin/devices` — authenticated list of registered devices.
