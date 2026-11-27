@@ -46,8 +46,8 @@
           <div id="networkFields" class="hidden">
             <label>شبکه تبلیغاتی</label><select id="networkProvider"><option value="adsterra">Adsterra</option></select>
             <label>شناسه Zone / واحد تبلیغاتی</label><input id="networkZoneId" maxlength="200" placeholder="شناسه‌ای که از پنل شبکه دریافت می‌کنید">
-            <label>کد تبلیغ (در صورت نیاز به‌جای شناسه)</label><textarea id="networkCode" maxlength="12000" placeholder="کد رسمی واحد تبلیغاتی؛ بعد از دریافت شناسه و بررسی نوع آن وارد می‌شود"></textarea>
-            <p class="accordion-hint">نمایش شبکه در اپ پس از مشخص‌شدن قالب دقیق کد و سازگاری آن با Android WebView تکمیل می‌شود.</p>
+            <label>لینک Smartlink آدسترا (HTTPS)</label><input id="networkCode" type="url" maxlength="2048" placeholder="https://...">
+            <p class="accordion-hint">Smartlink آدسترا SDK یا بنر خودکار نیست؛ کاربر با لمس کادر تبلیغ به لینک تبلیغاتی هدایت می‌شود. شناسه Zone برای این روش لازم نیست.</p>
           </div>
           <button type="submit">ذخیره حالت تبلیغات</button><p id="adSettingsMessage" role="status"></p>
         </form>
