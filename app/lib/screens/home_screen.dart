@@ -703,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         textDirection: TextDirection.ltr,
                         style: const TextStyle(
                           color: Color(0xFFFFC34D),
-                          fontSize: 15,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
