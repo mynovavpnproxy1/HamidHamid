@@ -122,7 +122,6 @@ class _LoadingScreenState extends State<LoadingScreen>
                     ),
                   ),
                   const Spacer(flex: 1),
-                  ),
                 ],
               ),
             ),
