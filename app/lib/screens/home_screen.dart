@@ -226,22 +226,68 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildHomeAdPlacement() {
     final content = _homeContent;
-    if (content == null || content.adMode == 'network') {
+    if (content == null) {
+      return const SizedBox(height: 104);
+    }
+    if (content.adMode == 'network') {
+      final smartLink = (content.networkCode ?? '').trim();
+      final smartLinkUri = Uri.tryParse(smartLink);
+      final validSmartLink = smartLinkUri != null &&
+          smartLinkUri.scheme == 'https' &&
+          smartLinkUri.host.isNotEmpty;
       return SizedBox(
         height: 104,
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF14131A),
+        width: double.infinity,
+        child: Material(
+          color: _lightTheme ? const Color(0xFFFFFFFF) : const Color(0xFF14131A),
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _lightTheme ? const Color(0xFFD5E0EF) : const Color(0xFF24232C)),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            content?.adMode == 'network'
-                ? (_fa ? 'جایگاه تبلیغات شبکه‌ای' : 'Ad network placement')
-                : (_fa ? 'جایگاه تبلیغات NOVA' : 'NOVA ad placement'),
-            style: const TextStyle(color: Color(0xFF777680), fontSize: 11),
+            onTap: validSmartLink
+                ? () async {
+                    await launchUrl(
+                      smartLinkUri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                : null,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: _lightTheme
+                      ? const Color(0xFFD5E0EF)
+                      : const Color(0xFF24232C),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.ads_click_rounded,
+                    color: validSmartLink
+                        ? const Color(0xFF69A0FF)
+                        : const Color(0xFF777680),
+                    size: 25,
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    validSmartLink
+                        ? (_fa ? 'مشاهده تبلیغ' : 'View advertisement')
+                        : (_fa
+                            ? 'لینک تبلیغ در پنل تنظیم نشده است'
+                            : 'Ad link is not configured'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF777680),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
