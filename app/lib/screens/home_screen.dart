@@ -106,8 +106,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
       ]);
       if (!mounted) return;
+      final serverListAvailable = results[1] is List<VpnServer>;
       setState(() {
-        _internetAvailable = results[0] as bool;
+        // A successful API response is also proof of working internet access.
+        _internetAvailable =
+            (results[0] as bool) || serverListAvailable;
       });
     } finally {
       if (mounted) setState(() => _refreshing = false);
