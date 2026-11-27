@@ -118,3 +118,14 @@ Validation status for these latest visual refinements:
 - The user's supplied screenshots show the currently installed APK appearance; they are not evidence that the latest commits have been installed.
 
 - `0f2f3502f7d09d8df5233e3231ae0f2058f9debf`: align the home header with the NOVA identity by displaying the existing NOVA logo asset and a bilingual privacy/speed/security tagline; shift the home background to the navy palette. No JumpJump brand artwork was copied.
+
+## Follow-up review and visual refinements — 2026-11-27
+
+- Re-opened the two Library JumpJump recordings for a fresh visual review: primary `screen-۲۰۲۶۱۱۱۵-۱۱۰۰۱۲.mp4` (111.76 s) and supplemental `screen-۲۰۲۶۱۱۱۱-۱۶۲۰۰۹.mp4` (53.54 s). The connecting state uses a rotating dotted globe with the reference app wordmark centered, changing connection text/progress, and a bottom stay-on-page prompt.
+- Compared the reference with the current feature-branch implementation. NOVA already has a separate branded connection screen, cancel control, dynamic selected location, attempt progress, and a stay-on-page prompt. Its prior orbit-ring graphic was visually unlike the dotted globe in the reference.
+- Updated `app/lib/widgets/nova_animations.dart` in commit `4a61a5a64bad843b884bc024cbc37e13ccef51e4`: replaced the three orbital rings/core with a rotating 3D field of luminous dots and an independently branded NOVA wordmark. The NOVA name and blue/cyan/purple palette remain; no JumpJump branding or ad artwork was copied.
+- Updated `app/lib/screens/home_screen.dart` in commit `8c38642492ceeeb9a3c76afc67ddeac3beb4b8da`: increased the visible auto-disconnect countdown font from 15 to 18, a modest size increase. The actual timeout remains two hours; timer start/reset/expiry logic was not changed.
+- Re-fetched both edited files from `ui/jumpjump-reference` `main` was not modified. The new animation and timer font values were confirmed in GitHub responses.
+- Branding review: `JEYRAN GROUP` is correctly spelled and remains on the splash screen as previously requested; it is not intended as a Home footer. No unrelated footer/date text was added.
+- Existing behavior review: the connection screen still uses real engine status, selected server, failover attempt count, and cancellation; the countdown still starts on `CONNECTED` and resets on `DISCONNECTED`. The countdown is in-process and is not a persistent background timer if Android kills the app.
+- Validation limitation: no Flutter analyzer, widget tests, APK build, or physical-device test was run for these two commits in this session. Do not describe the new animation as compile-verified or device-tested until a supported build environment runs those checks. GitHub Actions quota is not assumed available.
