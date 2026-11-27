@@ -122,21 +122,6 @@ class _LoadingScreenState extends State<LoadingScreen>
                     ),
                   ),
                   const Spacer(flex: 1),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 10),
-                    child: Text(
-                      '4.6.6.0',
-                      textDirection: TextDirection.ltr,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2,
-                        color: Color(0xFFFF454F),
-                        shadows: [
-                          Shadow(color: Color(0xCCFF2638), blurRadius: 12),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ),
