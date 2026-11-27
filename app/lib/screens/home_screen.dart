@@ -21,7 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 enum _ConnectionUi { disconnected, connecting, connected, disconnecting, error }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final ApiService _api = ApiService();
   final StorageService _storage = StorageService();
   final VpnService _vpn = VpnService();
@@ -59,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2400),
@@ -71,8 +73,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     _statusSubscription = _vpn.statusChanges.listen(_onEngineStatus);
     _onEngineStatus(_vpn.currentStatus);
+    // Reattach to the native status stream after app/process recreation and
+    // restore the last selected server before rendering the home screen.
+    unawaited(_initializeHomeState());
     // Refresh server metadata and test real internet reachability on launch.
     unawaited(_refreshHome());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // The native VPN service continues broadcasting status while the app is
+      // in the background. Refresh the saved server metadata on return.
+      unawaited(_restoreSavedServer());
+    }
+  }
+
+  Future<void> _initializeHomeState() async {
+    try {
+      await _vpn.initialize();
+    } catch (_) {
+      // A transient engine initialization error must not hide the saved server.
+    }
+    await _restoreSavedServer();
+  }
+
+  Future<void> _restoreSavedServer() async {
+    try {
+      final savedId = await _storage.readServerId();
+      if (savedId == null || savedId.isEmpty) return;
+      final servers = await _api.fetchServers();
+      VpnServer? savedServer;
+      for (final server in servers) {
+        if (server.id == savedId) {
+          savedServer = server;
+          break;
+        }
+      }
+      if (!mounted || savedServer == null) return;
+      final favorites = await _storage.readFavoriteServerIds();
+      if (!mounted) return;
+      setState(() {
+        _preferredServer = savedServer;
+        if (_connection == _ConnectionUi.connected) {
+          _activeServer = savedServer;
+        }
+        _selectedFavorite = favorites.contains(savedId);
+      });
+    } catch (_) {
+      // Keep the persisted selection in storage; retry on the next resume.
+    }
   }
 
   Future<bool> _checkInternetReachability() async {
@@ -163,7 +213,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           if (_connection == _ConnectionUi.disconnecting) break;
           final wasConnected = _connection == _ConnectionUi.connected;
           _connection = _ConnectionUi.connected;
-          if (!wasConnected) _startAutoDisconnectTimer();
+          if (!wasConnected) {
+            _startAutoDisconnectTimer(
+              elapsedSeconds: _elapsedConnectionSeconds(status.duration),
+            );
+          }
           _message = null;
           break;
         case 'CONNECTING':
@@ -223,9 +277,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         '${seconds.toString().padLeft(2, '0')}';
   }
 
-  void _startAutoDisconnectTimer() {
+  int _elapsedConnectionSeconds(String duration) {
+    final parts = duration.split(':');
+    if (parts.length != 3) return 0;
+    final hours = int.tryParse(parts[0]);
+    final minutes = int.tryParse(parts[1]);
+    final seconds = int.tryParse(parts[2]);
+    if (hours == null || minutes == null || seconds == null) return 0;
+    return (hours * 3600) + (minutes * 60) + seconds;
+  }
+
+  void _startAutoDisconnectTimer({int elapsedSeconds = 0}) {
     _autoDisconnectTimer?.cancel();
-    _autoDisconnectRemainingSeconds = 2 * 60 * 60;
+    final elapsed = elapsedSeconds.clamp(0, 2 * 60 * 60);
+    _autoDisconnectRemainingSeconds = (2 * 60 * 60) - elapsed;
     _autoDisconnectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted || !_connected) {
         timer.cancel();
@@ -264,6 +329,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _autoDisconnectTimer?.cancel();
     _statusSubscription?.cancel();
@@ -704,7 +770,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             backgroundColor: const Color(0xFF14131A),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+              // Extra bottom clearance keeps the last controls comfortably
+              // above Android's three-button navigation bar while scrolling.
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 36),
               children: [
                 Row(
                   children: [
