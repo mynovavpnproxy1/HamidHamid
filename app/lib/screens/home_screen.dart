@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _startAutoDisconnectTimer({int elapsedSeconds = 0}) {
     _autoDisconnectTimer?.cancel();
-    final elapsed = elapsedSeconds.clamp(0, 2 * 60 * 60);
+    final elapsed = elapsedSeconds.clamp(0, 2 * 60 * 60).toInt();
     _autoDisconnectRemainingSeconds = (2 * 60 * 60) - elapsed;
     _autoDisconnectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted || !_connected) {
