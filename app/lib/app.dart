@@ -30,21 +30,36 @@ class NovaVpnApp extends StatelessWidget {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.only(top: 3, bottom: 5),
-                child: Text(
-                  '30071366',
-                  textDirection: TextDirection.ltr,
-                  style: const TextStyle(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '30071366',
+                      textDirection: TextDirection.ltr,
+                      style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 2,
-                    color: Color(0xFFFFD43B),
+                    color: Color(0xFFFF454F),
                     shadows: [
                       Shadow(
-                        color: Color(0x99FFB300),
-                        blurRadius: 7,
+                        color: Color(0xCCFF2638),
+                        blurRadius: 10,
                       ),
                     ],
-                  ),
+                    ),
+                    const SizedBox(height: 1),
+                    const Text(
+                      '4.6.6.0',
+                      textDirection: TextDirection.ltr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                        color: Color(0xFFFF454F),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
