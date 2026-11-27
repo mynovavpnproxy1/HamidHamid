@@ -22,7 +22,7 @@ class NovaVpnApp extends StatelessWidget {
             elevation: 0,
           ),
         ),
-        // Keep the ownership mark visible on every route and future screen.
+        // Keep the ownership mark and its companion version visible globally.
         builder: (context, child) => Column(
           children: [
             Expanded(child: child ?? const SizedBox.shrink()),
@@ -37,16 +37,17 @@ class NovaVpnApp extends StatelessWidget {
                       '30071366',
                       textDirection: TextDirection.ltr,
                       style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                    color: Color(0xFFFF454F),
-                    shadows: [
-                      Shadow(
-                        color: Color(0xCCFF2638),
-                        blurRadius: 10,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                        color: Color(0xFFFF454F),
+                        shadows: [
+                          Shadow(
+                            color: Color(0xCCFF2638),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
-                    ],
                     ),
                     const SizedBox(height: 1),
                     const Text(
@@ -67,3 +68,4 @@ class NovaVpnApp extends StatelessWidget {
         ),
         home: const SplashScreen(),
       );
+}
