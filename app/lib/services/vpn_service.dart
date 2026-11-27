@@ -226,15 +226,12 @@ class VpnService {
   }
 
   Future<void> disconnect({
-    Duration timeout = const Duration(seconds: 12),
+    Duration timeout = const Duration(seconds: 15),
   }) async {
     await initialize();
 
-    if (_latestStatus.state.toUpperCase() == 'DISCONNECTED') {
-      return;
-    }
-
     final stopped = Completer<void>();
+    // Subscribe before requesting stop so a fast DISCONNECTED event is not lost.
     final subscription = statusChanges.listen((status) {
       if (status.state.toUpperCase() == 'DISCONNECTED' &&
           !stopped.isCompleted) {
@@ -242,13 +239,41 @@ class VpnService {
       }
     });
 
+    final deadline = DateTime.now().add(timeout);
     try {
-      await _engine.stopV2Ray();
-      if (_latestStatus.state.toUpperCase() == 'DISCONNECTED' &&
-          !stopped.isCompleted) {
-        stopped.complete();
+      // Always send a stop command. A stale DISCONNECTED callback must not
+      // prevent the native service from receiving an explicit stop request.
+      while (!stopped.isCompleted) {
+        await _engine.stopV2Ray();
+
+        if (_latestStatus.state.toUpperCase() == 'DISCONNECTED' &&
+            !stopped.isCompleted) {
+          stopped.complete();
+          break;
+        }
+
+        final remaining = deadline.difference(DateTime.now());
+        if (remaining <= Duration.zero) {
+          throw const VpnDisconnectTimeoutException();
+        }
+
+        // Some native service transitions need a second stop request.
+        // Retry without requiring another user tap, while retaining a hard
+        // timeout and waiting for the engine's actual DISCONNECTED event.
+        final wait = remaining < const Duration(seconds: 2)
+            ? remaining
+            : const Duration(seconds: 2);
+        await Future.any<void>([
+          stopped.future,
+          Future<void>.delayed(wait),
+        ]);
       }
-      await stopped.future.timeout(timeout);
+
+      await stopped.future.timeout(
+        deadline.difference(DateTime.now()).isNegative
+            ? Duration.zero
+            : deadline.difference(DateTime.now()),
+      );
     } on TimeoutException {
       throw const VpnDisconnectTimeoutException();
     } finally {
