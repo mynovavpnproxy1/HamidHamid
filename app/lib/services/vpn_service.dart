@@ -246,11 +246,9 @@ class VpnService {
       while (!stopped.isCompleted) {
         await _engine.stopV2Ray();
 
-        if (_latestStatus.state.toUpperCase() == 'DISCONNECTED' &&
-            !stopped.isCompleted) {
-          stopped.complete();
-          break;
-        }
+        // Do not trust _latestStatus here: it may be a stale DISCONNECTED
+        // value from before this stop request. Only the listener above may
+        // complete this operation after receiving a fresh engine event.
 
         final remaining = deadline.difference(DateTime.now());
         if (remaining <= Duration.zero) {
