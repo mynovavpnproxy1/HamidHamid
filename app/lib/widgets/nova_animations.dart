@@ -166,87 +166,78 @@ class _NovaOrbitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height).toDouble() * .31;
+    final radius = math.min(size.width, size.height).toDouble() * .36;
+    final rotation = progress * math.pi * 2;
 
-    final coreGlow = Paint()
-      ..color = const Color(0xFF287BFF).withValues(alpha: .20)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
-    canvas.drawCircle(center, radius * .92, coreGlow);
+    final glow = Paint()
+      ..color = const Color(0xFF278CFF).withValues(alpha: .13)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24);
+    canvas.drawCircle(center, radius * 1.12, glow);
 
-    final core = Paint()
-      ..shader = const RadialGradient(
-        colors: [
-          Color(0xFF35F0D0),
-          Color(0xFF287BFF),
-          Color(0xFF603BDB),
-          Color(0xFF111B42),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawCircle(center, radius * .72, core);
+    // A rotating field of luminous points forms a 3D globe, echoing the
+    // reference connection animation while keeping NOVA's own palette.
+    const latitudeSteps = 15;
+    const longitudeSteps = 48;
+    for (var latIndex = 0; latIndex <= latitudeSteps; latIndex++) {
+      final latitude = -math.pi / 2 +
+          math.pi * latIndex / latitudeSteps;
+      final latitudeRadius = math.cos(latitude);
+      for (var lonIndex = 0; lonIndex < longitudeSteps; lonIndex++) {
+        final longitude =
+            math.pi * 2 * lonIndex / longitudeSteps + rotation;
+        final x = latitudeRadius * math.cos(longitude);
+        final y = math.sin(latitude);
+        final depth = latitudeRadius * math.sin(longitude);
+        final perspective = .82 + depth * .18;
+        final point = Offset(
+          center.dx + x * radius * perspective,
+          center.dy + y * radius * .78 * perspective,
+        );
+        final front = depth >= 0;
+        final alpha = front ? .88 : .22;
+        final palette = (latIndex + lonIndex ~/ 8) % 3;
+        final color = switch (palette) {
+          0 => const Color(0xFF31D8FF),
+          1 => const Color(0xFF438CFF),
+          _ => const Color(0xFF8A68FF),
+        };
+        final dotRadius = (front ? 1.25 : .85) +
+            .35 * (1 + math.sin(rotation * 2 + lonIndex * .31)) / 2;
+        final paint = Paint()..color = color.withValues(alpha: alpha);
+        canvas.drawCircle(point, dotRadius, paint);
+      }
+    }
+
+    final orbitPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xFF39CFFF).withValues(alpha: .32);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center,
+        width: radius * 2.28,
+        height: radius * .62,
+      ),
+      orbitPaint,
+    );
 
     final text = TextPainter(
       text: const TextSpan(
         text: 'NOVA',
         style: TextStyle(
-          color: Color(0xFF42E5FF),
-          fontSize: 25,
+          color: Color(0xFFE8F7FF),
+          fontSize: 27,
           fontWeight: FontWeight.w900,
-          letterSpacing: 1.5,
+          letterSpacing: 1.7,
           shadows: [
             Shadow(color: Color(0xFF2B8CFF), blurRadius: 16),
-            Shadow(color: Color(0xFFB14DFF), blurRadius: 22),
+            Shadow(color: Color(0xFF8D4DFF), blurRadius: 22),
           ],
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
     text.paint(canvas, center - Offset(text.width / 2, text.height / 2));
-
-    final rings = <({double rx, double ry, double tilt, Color color, double speed})>[
-      (rx: 1.48, ry: .48, tilt: -.55, color: const Color(0xFF28D7FF), speed: 1),
-      (rx: 1.62, ry: .62, tilt: .48, color: const Color(0xFFB34DFF), speed: -1.25),
-      (rx: 1.34, ry: .76, tilt: 1.08, color: const Color(0xFF36F0C5), speed: .78),
-    ];
-
-    for (var index = 0; index < rings.length; index++) {
-      final ring = rings[index];
-      canvas.save();
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(ring.tilt);
-      final rect = Rect.fromCenter(
-        center: Offset.zero,
-        width: radius * ring.rx * 2,
-        height: radius * ring.ry * 2,
-      );
-      final ringPaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.7
-        ..color = ring.color.withValues(alpha: .72);
-      canvas.drawOval(rect, ringPaint);
-
-      final angle = progress * math.pi * 2 * ring.speed + index * 1.9;
-      final dot = Offset(
-        math.cos(angle) * rect.width / 2,
-        math.sin(angle) * rect.height / 2,
-      );
-      final dotGlow = Paint()
-        ..color = ring.color.withValues(alpha: .55)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
-      canvas.drawCircle(dot, 8, dotGlow);
-      canvas.drawCircle(dot, 3.3, Paint()..color = ring.color);
-      canvas.restore();
-    }
-
-    final sparkle = Paint()..color = const Color(0xFF35DFFF).withValues(alpha: .8);
-    for (var i = 0; i < 18; i++) {
-      final angle = i * math.pi * 2 / 18 + progress * math.pi * 2;
-      final distance = radius * (1.12 + .12 * math.sin(progress * math.pi * 4 + i));
-      canvas.drawCircle(
-        center + Offset(math.cos(angle) * distance, math.sin(angle) * distance),
-        i.isEven ? 1.8 : 1.1,
-        sparkle,
-      );
-    }
   }
 
   @override
