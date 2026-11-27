@@ -12,19 +12,12 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _progressController;
+class _LoadingScreenState extends State<LoadingScreen> {
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..forward();
-
     _timer = Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -36,7 +29,6 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    _progressController.dispose();
     super.dispose();
   }
 
@@ -106,18 +98,14 @@ class _LoadingScreenState extends State<LoadingScreen>
                   const SizedBox(height: 8),
                   const NovaOrbitNAnimation(size: 104),
                   const SizedBox(height: 8),
-                  SizedBox(
+                  const SizedBox(
                     width: 92,
-                    child: AnimatedBuilder(
-                      animation: _progressController,
-                      builder: (context, _) => LinearProgressIndicator(
-                        value: _progressController.value,
-                        minHeight: 3,
-                        borderRadius: const BorderRadius.all(Radius.circular(8)),
-                        backgroundColor: const Color(0xFF1D2B49),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF35A8FF),
-                        ),
+                    child: LinearProgressIndicator(
+                      minHeight: 3,
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      backgroundColor: Color(0xFF1D2B49),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF35A8FF),
                       ),
                     ),
                   ),
