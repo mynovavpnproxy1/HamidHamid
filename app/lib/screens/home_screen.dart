@@ -703,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         textDirection: TextDirection.ltr,
                         style: const TextStyle(
                           color: Color(0xFFFFC34D),
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
@@ -720,8 +720,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       onTap: _busy ? null : _toggleConnection,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 260),
-                        width: 164,
-                        height: 76,
+                        width: 148,
+                        height: 82,
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(48),
@@ -786,7 +786,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     color: _connected
                         ? const Color(0xFF159B70)
                         : (_lightTheme ? const Color(0xFF263B59) : const Color(0xFFB8B6C1)),
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
