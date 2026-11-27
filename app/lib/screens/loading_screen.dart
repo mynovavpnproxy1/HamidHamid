@@ -107,7 +107,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   const NovaOrbitNAnimation(size: 104),
                   const SizedBox(height: 8),
                   SizedBox(
-                    width: 112,
+                    width: 92,
                     child: AnimatedBuilder(
                       animation: _progressController,
                       builder: (context, _) => LinearProgressIndicator(
