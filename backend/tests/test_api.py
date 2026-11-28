@@ -150,6 +150,42 @@ def test_device_must_be_approved_before_receiving_profile(client):
     assert profile.headers["cache-control"] == "no-store"
 
 
+def test_announcement_banner_can_be_managed_and_is_public_only_when_enabled(client):
+    headers = admin_headers(client)
+    created = client.post(
+        "/api/v1/admin/home-content/announcements",
+        headers=headers,
+        json={"message": "Nova maintenance tonight", "enabled": True, "sort_order": 2},
+    )
+    assert created.status_code == 201
+    item_id = created.json()["id"]
+
+    public = client.get("/api/v1/home-content")
+    assert public.status_code == 200
+    assert public.json()["announcements"] == [
+        {"id": item_id, "message": "Nova maintenance tonight"}
+    ]
+
+    updated = client.put(
+        f"/api/v1/admin/home-content/announcements/{item_id}",
+        headers=headers,
+        json={"message": "Service restored", "enabled": False, "sort_order": 1},
+    )
+    assert updated.status_code == 200
+    assert client.get("/api/v1/home-content").json()["announcements"] == []
+
+    admin_list = client.get("/api/v1/admin/home-content", headers=headers)
+    assert admin_list.status_code == 200
+    assert admin_list.json()["announcements"][0]["message"] == "Service restored"
+
+    deleted = client.delete(
+        f"/api/v1/admin/home-content/announcements/{item_id}",
+        headers=headers,
+    )
+    assert deleted.status_code == 204
+
+
+
 def test_admin_routes_require_authentication(client):
     assert client.get("/api/v1/admin/servers").status_code == 401
     assert client.get("/api/v1/admin/servers", headers={"Authorization": "Bearer invalid"}).status_code == 401
