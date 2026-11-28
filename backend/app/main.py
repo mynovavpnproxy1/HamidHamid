@@ -132,6 +132,14 @@ def initialize_database() -> None:
             if column not in existing:
                 conn.execute(f"ALTER TABLE servers ADD COLUMN {column} TEXT")
 
+        conn.execute("""CREATE TABLE IF NOT EXISTS announcements (
+            id TEXT PRIMARY KEY,
+            message TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        )""")
+
 
 @app.on_event("startup")
 def startup() -> None:
@@ -225,6 +233,20 @@ class ServerInput(BaseModel):
         if self.location_verified and (not self.country_code or not (self.country_name_fa or self.country_name_en)):
             raise ValueError("Verified location requires a country code and at least one country name")
         return self
+
+
+class AnnouncementInput(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+    enabled: bool = False
+    sort_order: int = Field(default=0, ge=0, le=100000)
+
+    @field_validator("message")
+    @classmethod
+    def message_not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Message cannot be blank")
+        return value
 
 
 def admin_claims(authorization: str | None = Header(default=None)) -> dict:
@@ -380,6 +402,54 @@ def delete_server(server_id: str, _: dict = Depends(admin_claims)) -> Response:
         cursor = conn.execute("DELETE FROM servers WHERE id = ?", (server_id,))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Server not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get("/api/v1/home-content")
+def public_home_content() -> dict:
+    now = utc_now()
+    with database() as conn:
+        rows = conn.execute("""SELECT id, message FROM announcements
+            WHERE enabled = 1 ORDER BY sort_order ASC, updated_at DESC""").fetchall()
+    return {"announcements": [dict(row) for row in rows]}
+
+
+@app.get("/api/v1/admin/home-content")
+def admin_home_content(_: dict = Depends(admin_claims)) -> dict:
+    with database() as conn:
+        rows = conn.execute("SELECT * FROM announcements ORDER BY sort_order ASC, updated_at DESC").fetchall()
+    return {"announcements": [dict(row) for row in rows]}
+
+
+@app.post("/api/v1/admin/home-content/announcements", status_code=status.HTTP_201_CREATED)
+def create_announcement(payload: AnnouncementInput, _: dict = Depends(admin_claims)) -> dict:
+    item_id = secrets.token_urlsafe(12)
+    with database() as conn:
+        conn.execute("""INSERT INTO announcements (id, message, enabled, sort_order, updated_at)
+            VALUES (?, ?, ?, ?, ?)""",
+            (item_id, payload.message, int(payload.enabled), payload.sort_order, utc_now()))
+        row = conn.execute("SELECT * FROM announcements WHERE id = ?", (item_id,)).fetchone()
+    return dict(row)
+
+
+@app.put("/api/v1/admin/home-content/announcements/{item_id}")
+def update_announcement(item_id: str, payload: AnnouncementInput, _: dict = Depends(admin_claims)) -> dict:
+    with database() as conn:
+        cursor = conn.execute("""UPDATE announcements SET message = ?, enabled = ?, sort_order = ?, updated_at = ?
+            WHERE id = ?""",
+            (payload.message, int(payload.enabled), payload.sort_order, utc_now(), item_id))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Announcement not found")
+        row = conn.execute("SELECT * FROM announcements WHERE id = ?", (item_id,)).fetchone()
+    return dict(row)
+
+
+@app.delete("/api/v1/admin/home-content/announcements/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_announcement(item_id: str, _: dict = Depends(admin_claims)) -> Response:
+    with database() as conn:
+        cursor = conn.execute("DELETE FROM announcements WHERE id = ?", (item_id,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Announcement not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
