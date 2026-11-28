@@ -175,5 +175,5 @@ $('announcementForm').onsubmit=async event=>{
     clearAnnouncementForm();await loadAnnouncements();
   }catch(e){$('announcementStatus').textContent=e.message}
 };
-\nif(token){showDashboard(true);loadServers();loadCountries();loadDevices();loadAnnouncements()}else showDashboard(false);
+if(token){showDashboard(true);loadServers();loadCountries();loadDevices();loadAnnouncements()}else showDashboard(false);
 </script></body></html>
